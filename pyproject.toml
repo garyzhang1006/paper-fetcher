@@ -9,11 +9,17 @@ description = "arXiv paper fetching and knowledge-graph bootcamp code"
 requires-python = ">=3.10"
 dependencies = ["arxiv", "pydantic", "requests"]
 
+[project.scripts]
+paper-fetcher = "arxiv_kg.web:main"
+
 [project.optional-dependencies]
 test = ["pytest"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+arxiv_kg = ["static/*.html", "static/*.css", "static/*.js", "static/*.svg"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

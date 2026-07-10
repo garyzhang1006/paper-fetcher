@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Fetch and browse recent arXiv research papers.">
+    <title>Paper Fetcher</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <a class="brand" href="/" aria-label="Paper Fetcher home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" role="img">
+              <path d="M8 5h17l7 7v23H8z"></path>
+              <path d="M25 5v8h7M13 20h14M13 26h10"></path>
+            </svg>
+          </span>
+          <span>Paper Fetcher</span>
+        </a>
+
+        <nav class="nav-list" aria-label="Workspace">
+          <a class="nav-item active" href="#library" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 3v4M16 3v4M4 10h16"></path></svg>
+            Library
+          </a>
+          <button class="nav-item" type="button" data-focus-fetch>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"></path></svg>
+            New fetch
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <strong>Local workspace</strong>
+            <span>Data stays in SQLite</span>
+          </div>
+        </div>
+      </aside>
+
+      <main id="main-content" tabindex="-1">
+        <header class="topbar">
+          <button class="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+          </button>
+          <div>
+            <p class="eyebrow">Research workspace</p>
+            <h1>Paper radar</h1>
+          </div>
+          <a class="github-link" href="https://github.com/garyzhang1006/paper-fetcher" target="_blank" rel="noreferrer">
+            View source
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg>
+          </a>
+        </header>
+
+        <div class="content-grid">
+          <section class="workspace" id="library" aria-labelledby="library-heading">
+            <div class="intro-row">
+              <div>
+                <p class="eyebrow">Live from arXiv</p>
+                <h2 id="library-heading">Your research feed</h2>
+                <p class="section-copy">Pull recent papers, track revisions, and scan saved abstracts from one focused view.</p>
+              </div>
+              <button class="primary-button desktop-fetch" type="button" data-focus-fetch>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"></path></svg>
+                Fetch papers
+              </button>
+            </div>
+
+            <section class="stats-grid" aria-label="Library statistics">
+              <article class="stat-card">
+                <span class="stat-icon rust" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM15 3v5h4"></path></svg></span>
+                <div><strong id="paper-count">0</strong><span>Saved papers</span></div>
+              </article>
+              <article class="stat-card">
+                <span class="stat-icon teal" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V8M10 18V4M16 18v-7M22 18H2"></path></svg></span>
+                <div><strong id="feature-count">0</strong><span>Feature records</span></div>
+              </article>
+              <article class="stat-card">
+                <span class="stat-icon gold" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="m9 11 6-4M9 13l6 4"></path></svg></span>
+                <div><strong id="graph-count">0</strong><span>Graph links</span></div>
+              </article>
+            </section>
+
+            <div class="toolbar">
+              <label class="search-box" for="paper-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                <span class="sr-only">Search papers</span>
+                <input id="paper-search" type="search" placeholder="Search title, author, abstract…" autocomplete="off">
+              </label>
+              <label class="filter-field" for="category-filter">
+                <span class="sr-only">Filter by category</span>
+                <select id="category-filter">
+                  <option value="">All categories</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="results-summary" class="results-summary" aria-live="polite">Loading library…</div>
+            <div id="paper-list" class="paper-list" aria-busy="true"></div>
+          </section>
+
+          <aside class="fetch-panel" id="fetch-panel" aria-labelledby="fetch-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">New collection</p>
+                <h2 id="fetch-heading">Fetch from arXiv</h2>
+              </div>
+              <span class="live-badge"><span aria-hidden="true"></span>Live API</span>
+            </div>
+
+            <form id="fetch-form">
+              <fieldset>
+                <legend>Research categories</legend>
+                <p class="field-hint">Choose one or more feeds.</p>
+                <div class="category-options">
+                  <label><input type="checkbox" name="category" value="cs.LG" checked><span>Machine Learning<small>cs.LG</small></span></label>
+                  <label><input type="checkbox" name="category" value="stat.ML" checked><span>Statistics ML<small>stat.ML</small></span></label>
+                  <label><input type="checkbox" name="category" value="cs.AI"><span>Artificial Intelligence<small>cs.AI</small></span></label>
+                  <label><input type="checkbox" name="category" value="cs.RO"><span>Robotics<small>cs.RO</small></span></label>
+                  <label><input type="checkbox" name="category" value="cs.CL"><span>Language &amp; NLP<small>cs.CL</small></span></label>
+                  <label><input type="checkbox" name="category" value="cs.CV"><span>Computer Vision<small>cs.CV</small></span></label>
+                </div>
+              </fieldset>
+
+              <div class="form-row">
+                <label for="lookback">
+                  Lookback
+                  <select id="lookback" name="lookback">
+                    <option value="24">Past 24 hours</option>
+                    <option value="72">Past 3 days</option>
+                    <option value="168">Past week</option>
+                    <option value="336">Past 2 weeks</option>
+                  </select>
+                </label>
+                <label for="max-results">
+                  Result cap
+                  <select id="max-results" name="max-results">
+                    <option value="100">100 papers</option>
+                    <option value="300" selected>300 papers</option>
+                    <option value="500">500 papers</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="toggle-row">
+                <span><strong>Scan revisions</strong><small>Refresh newer paper versions</small></span>
+                <input id="scan-revisions" type="checkbox" checked>
+                <span class="toggle" aria-hidden="true"></span>
+              </label>
+
+              <button class="primary-button fetch-submit" type="submit">
+                <span class="button-label">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"></path></svg>
+                  Fetch latest papers
+                </span>
+                <span class="button-loading" aria-hidden="true"><span class="spinner"></span>Fetching from arXiv…</span>
+              </button>
+              <p class="fetch-note">First fetch uses your lookback window. Later runs continue from the last successful checkpoint.</p>
+            </form>
+
+            <div id="fetch-status" class="fetch-status" role="status" aria-live="polite" hidden></div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <template id="paper-template">
+      <article class="paper-card">
+        <div class="paper-meta">
+          <span class="category-pill"></span>
+          <span class="paper-date"></span>
+          <span class="version-pill"></span>
+        </div>
+        <h3><a class="paper-title" target="_blank" rel="noreferrer"></a></h3>
+        <p class="paper-authors"></p>
+        <p class="paper-abstract"></p>
+        <div class="paper-footer">
+          <span class="paper-id"></span>
+          <div class="paper-actions">
+            <a class="text-link abstract-link" target="_blank" rel="noreferrer">Abstract</a>
+            <a class="text-link pdf-link" target="_blank" rel="noreferrer">PDF <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </article>
+    </template>
+  </body>
+</html>
