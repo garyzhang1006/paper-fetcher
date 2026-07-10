@@ -21,6 +21,8 @@ paper-fetcher
 Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The UI lets you choose
 arXiv categories, set a first-run lookback window, fetch revisions, search
 saved titles/authors/abstracts, and filter the local library by category.
+Its defaults match Notebook 1's bounded live example: `cs.LG`, a 24-hour
+lookback, a 200-paper submission cap, and a 200-paper revision cap.
 
 Paper metadata and pipeline checkpoints are stored in
 `data/arxiv_kg.sqlite3`. Override the path or port when needed:

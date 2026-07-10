@@ -66,7 +66,7 @@ def validate_fetch_payload(payload: object) -> dict[str, Any]:
         if category not in cleaned_categories:
             cleaned_categories.append(category)
 
-    max_results = payload.get("max_results", 100)
+    max_results = payload.get("max_results", 200)
     lookback_hours = payload.get("lookback_hours", 24)
     scan_revisions = payload.get("scan_revisions", True)
     if isinstance(max_results, bool) or not isinstance(max_results, int):

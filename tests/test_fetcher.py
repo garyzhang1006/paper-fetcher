@@ -78,40 +78,53 @@ def test_saturated_query_does_not_advance_checkpoint(tmp_path, monkeypatch):
             now=now,
         )
 
+    # The first two rows are safe to retain, but the next run must retry the
+    # same interval because the successful-run checkpoint was not advanced.
     assert db.counts()["papers"] == 2
     assert db.get_state(FETCH_STATE_KEY) is None
 
 
 def test_three_day_gap_after_checkpoint_misses_nothing(tmp_path, monkeypatch):
-    """A skipped daily job still covers its full gap on the next run."""
+    """If the daily job is skipped for 3 days, the next run must still cover
+    the whole gap because the query starts at (last checkpoint - overlap)."""
     monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
     db = Database(tmp_path / "test.sqlite3")
 
+    # Day 0: one paper, run succeeds, checkpoint is written.
     day0 = datetime(2026, 6, 20, 12, tzinfo=UTC)
     FakeClient.new_results = [fake_result(1, updated=day0)]
     FakeClient.revision_results = []
-    fetch_recent_papers(
-        db, categories=["cs.LG"], max_results=10, scan_revisions=False, now=day0
-    )
+    fetch_recent_papers(db, categories=["cs.LG"], max_results=10,
+                        scan_revisions=False, now=day0)
 
+    # Days 1 and 2: job never runs (no fetch calls at all).
+
+    # Day 3: two papers were submitted during the gap. The job runs again.
     day3 = day0 + timedelta(days=3)
     FakeClient.new_results = [
         fake_result(2, updated=day0 + timedelta(days=1)),
         fake_result(3, updated=day0 + timedelta(days=2)),
     ]
-    report = fetch_recent_papers(
-        db, categories=["cs.LG"], max_results=10, scan_revisions=False, now=day3
-    )
+    FakeClient.revision_results = []
+    report = fetch_recent_papers(db, categories=["cs.LG"], max_results=10,
+                                 scan_revisions=False, now=day3)
 
+    # 1. The day-3 query starts at (day0 checkpoint - 24h overlap), so the whole
+    #    gap [day0, day3] sits inside the query window and nothing is skipped.
     assert report.start_utc == day0 - timedelta(hours=24)
     assert report.start_utc < day0
+
+    # 2. Both papers submitted during the gap landed in the database.
     assert db.get_paper("2606.00002") is not None
     assert db.get_paper("2606.00003") is not None
     assert db.counts()["papers"] == 3
+
+    # 3. The checkpoint advanced to day3 only after the complete, uncapped run.
     assert db.get_state(FETCH_STATE_KEY) == day3.isoformat()
 
 
 def test_query_with_cs_ro_exact_expression():
+    """Notebook 1, exercise 1: add cs.RO and test the exact query string."""
     query = build_category_query(
         ["cs.LG", "stat.ML", "cs.RO"],
         datetime(2026, 6, 23, 0, 0, tzinfo=UTC),
@@ -124,25 +137,22 @@ def test_query_with_cs_ro_exact_expression():
 
 
 def test_revised_paper_title_change_is_stored(tmp_path, monkeypatch):
+    """Notebook 1, exercise 3: a v2 with a new title replaces the stored title."""
     monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
     db = Database(tmp_path / "test.sqlite3")
     now = datetime(2026, 6, 24, 12, tzinfo=UTC)
 
     FakeClient.new_results = [fake_result(1, version=1, updated=now - timedelta(days=1))]
     FakeClient.revision_results = []
-    fetch_recent_papers(
-        db,
-        categories=["cs.LG"],
-        max_results=10,
-        scan_revisions=False,
-        now=now - timedelta(hours=12),
-    )
+    fetch_recent_papers(db, categories=["cs.LG"], max_results=10,
+                        scan_revisions=False, now=now - timedelta(hours=12))
     assert db.get_paper("2606.00001").title == "Paper 1"
 
     v2 = fake_result(1, version=2, updated=now)
     v2.title = "Paper 1: Revised With a New Title"
     FakeClient.new_results = [v2]
-    fetch_recent_papers(db, categories=["cs.LG"], max_results=10, scan_revisions=False, now=now)
+    fetch_recent_papers(db, categories=["cs.LG"], max_results=10,
+                        scan_revisions=False, now=now)
 
     stored = db.get_paper("2606.00001")
     assert stored.version == 2
@@ -165,6 +175,7 @@ def test_revision_scan_updates_existing_paper(tmp_path, monkeypatch):
     )
     assert db.get_paper("2606.00001").version == 1
 
+    # A later run has no new submission, but its last-updated scan finds v2.
     FakeClient.new_results = []
     FakeClient.revision_results = [
         fake_result(1, version=2, updated=now - timedelta(hours=1)),

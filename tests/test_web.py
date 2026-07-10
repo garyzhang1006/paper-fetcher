@@ -40,6 +40,15 @@ def test_validate_fetch_payload_normalizes_categories():
     assert options["scan_revisions"] is False
 
 
+def test_fetch_defaults_match_notebook_live_example():
+    options = validate_fetch_payload({"categories": ["cs.LG"]})
+    assert options["max_results"] == 200
+    assert options["first_run_lookback_hours"] == 24
+    assert options["revision_max_results"] == 200
+    assert options["revision_first_run_lookback_hours"] == 24
+    assert options["scan_revisions"] is True
+
+
 @pytest.mark.parametrize(
     "payload, message",
     [
@@ -60,6 +69,9 @@ def test_ui_and_stats_endpoints(running_server):
         html = response.read().decode("utf-8")
         assert response.status == 200
         assert "Paper Fetcher" in html
+        assert '<option value="200" selected>200 papers</option>' in html
+        assert 'value="cs.LG" checked' in html
+        assert 'value="stat.ML" checked' not in html
         assert "default-src 'self'" in response.headers["Content-Security-Policy"]
 
     with urlopen(f"{base_url}/api/stats") as response:

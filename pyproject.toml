@@ -1,19 +1,24 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "arxiv-kg"
 version = "0.1.0"
 description = "arXiv paper fetching and knowledge-graph bootcamp code"
-requires-python = ">=3.10"
-dependencies = ["arxiv", "pydantic", "requests"]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "arxiv>=4.0,<5",
+  "pydantic>=2.7,<3",
+  "requests>=2.32,<3",
+]
 
 [project.scripts]
 paper-fetcher = "arxiv_kg.web:main"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest>=8,<10"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -24,3 +29,4 @@ arxiv_kg = ["static/*.html", "static/*.css", "static/*.js", "static/*.svg"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+addopts = "-q"
