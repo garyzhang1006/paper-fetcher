@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import re
 from dataclasses import asdict
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,12 +14,11 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from .db import Database
-from .fetcher import fetch_recent_papers
+from .fetcher import ARXIV_CATEGORY_RE, fetch_recent_papers
 from .models import PaperRecord
 
 LOGGER = logging.getLogger(__name__)
 MAX_BODY_BYTES = 16 * 1024
-CATEGORY_RE = re.compile(r"^[A-Za-z-]+(?:\.[A-Za-z-]+)+$")
 STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -61,7 +59,7 @@ def validate_fetch_payload(payload: object) -> dict[str, Any]:
 
     cleaned_categories: list[str] = []
     for category in categories:
-        if not isinstance(category, str) or not CATEGORY_RE.fullmatch(category):
+        if not isinstance(category, str) or not ARXIV_CATEGORY_RE.fullmatch(category):
             raise ValueError(f"Invalid arXiv category: {category!r}")
         if category not in cleaned_categories:
             cleaned_categories.append(category)

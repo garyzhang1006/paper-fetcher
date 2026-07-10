@@ -347,17 +347,24 @@ class Database:
         return row["state_value"] if row else None
 
     def set_state(self, key: str, value: str) -> None:
+        self.set_states({key: value})
+
+    def set_states(self, states: dict[str, str]) -> None:
+        """Write related pipeline checkpoints in one transaction."""
+
         with self.connect() as con:
-            con.execute(
-                """
-                INSERT INTO pipeline_state(state_key, state_value, updated_at)
-                VALUES (?, ?, ?)
-                ON CONFLICT(state_key) DO UPDATE SET
-                    state_value = excluded.state_value,
-                    updated_at = excluded.updated_at
-                """,
-                (key, value, utc_now_iso()),
-            )
+            now = utc_now_iso()
+            for key, value in states.items():
+                con.execute(
+                    """
+                    INSERT INTO pipeline_state(state_key, state_value, updated_at)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(state_key) DO UPDATE SET
+                        state_value = excluded.state_value,
+                        updated_at = excluded.updated_at
+                    """,
+                    (key, value, now),
+                )
 
     def counts(self) -> dict[str, int]:
         with self.connect() as con:

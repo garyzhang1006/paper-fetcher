@@ -31,6 +31,47 @@ Paper metadata and pipeline checkpoints are stored in
 paper-fetcher --db /path/to/papers.sqlite3 --port 9000
 ```
 
+## Run one bounded update
+
+The noninteractive command uses the notebook's safe live defaults: `cs.LG`, a
+24-hour first-run lookback, a 24-hour overlap, and separate 200-result caps for
+new submissions and revisions.
+
+```bash
+paper-fetcher-daily
+```
+
+Options can be changed explicitly without editing code:
+
+```bash
+paper-fetcher-daily \
+  --db data/arxiv_kg.sqlite3 \
+  --category cs.LG \
+  --category cs.RO \
+  --max-results 200 \
+  --revision-max-results 200
+```
+
+The command exits nonzero if an API page fails or either query exceeds its cap.
+Rows saved before failure are safe because upserts are idempotent, while atomic
+checkpoints remain at the last complete run.
+
+## Daily GitHub Actions update
+
+`.github/workflows/daily-arxiv-fetch.yml` runs every day at 06:17 in the
+`America/Chicago` IANA timezone and also supports manual runs. It installs the
+package, runs the full offline test suite, performs one bounded fetch, then
+commits `data/arxiv_kg.sqlite3` only after success. Repository Actions settings
+must allow `GITHUB_TOKEN` write access for the final push.
+
+The persisted checkpoint covers skipped days because the next query begins at
+the last successful checkpoint minus the overlap. A capped or failed run does
+not move either checkpoint. Checkpoints are scoped to each category set, so
+adding a category uses its full first-run lookback instead of inheriting another
+category's checkpoint. The revision query is sorted by last-updated time, so a
+new version of an older paper is refreshed even when its original submission is
+outside the new-paper window.
+
 ## Tests
 
 ```bash

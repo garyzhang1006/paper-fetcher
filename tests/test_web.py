@@ -40,6 +40,11 @@ def test_validate_fetch_payload_normalizes_categories():
     assert options["scan_revisions"] is False
 
 
+@pytest.mark.parametrize("value", ["hep-th", "quant-ph", "cs.LG", "astro-ph.CO"])
+def test_validate_fetch_payload_accepts_valid_category_formats(value):
+    assert validate_fetch_payload({"categories": [value]})["categories"] == [value]
+
+
 def test_fetch_defaults_match_notebook_live_example():
     options = validate_fetch_payload({"categories": ["cs.LG"]})
     assert options["max_results"] == 200

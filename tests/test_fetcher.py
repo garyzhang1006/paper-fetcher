@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -11,8 +12,14 @@ from arxiv_kg.fetcher import (
     FETCH_STATE_KEY,
     UPDATE_STATE_KEY,
     build_category_query,
+    category_state_key,
     fetch_recent_papers,
+    result_to_paper,
 )
+from arxiv_kg.ids import split_arxiv_version
+
+FETCH_KEY = category_state_key(FETCH_STATE_KEY, ["cs.LG"])
+UPDATE_KEY = category_state_key(UPDATE_STATE_KEY, ["cs.LG"])
 
 
 def fake_result(number: int, *, version: int = 1, updated: datetime) -> SimpleNamespace:
@@ -48,6 +55,33 @@ class FakeClient:
             yield from self.revision_results
 
 
+def test_split_arxiv_version_handles_notebook_examples():
+    assert split_arxiv_version("2107.05580v3") == ("2107.05580", 3)
+    assert split_arxiv_version("quant-ph/0201082v1") == ("quant-ph/0201082", 1)
+    assert split_arxiv_version("2107.05580") == ("2107.05580", 1)
+
+
+def test_paper_upsert_is_idempotent_and_revision_clears_stale_files(tmp_path):
+    db = Database(tmp_path / "test.sqlite3")
+    v1 = result_to_paper(
+        fake_result(1, version=1, updated=datetime(2026, 6, 20, tzinfo=UTC))
+    )
+
+    assert db.upsert_paper(v1) == "inserted"
+    assert db.upsert_paper(v1) == "unchanged"
+    db.set_paper_file(v1.arxiv_id, kind="pdf", path="papers/v1.pdf")
+    db.set_paper_file(v1.arxiv_id, kind="text", path="papers/v1.txt")
+
+    v2_result = fake_result(
+        1, version=2, updated=datetime(2026, 6, 24, tzinfo=UTC)
+    )
+    v2_result.title = "Paper 1: Revised"
+    assert db.upsert_paper(result_to_paper(v2_result)) == "updated"
+    assert db.counts()["papers"] == 1
+    assert db.get_paper(v1.arxiv_id).title == "Paper 1: Revised"
+    assert db.get_paper_paths(v1.arxiv_id) == (None, None)
+
+
 def test_category_query_uses_utc_minute_window():
     query = build_category_query(
         ["cs.LG", "stat.ML"],
@@ -81,7 +115,37 @@ def test_saturated_query_does_not_advance_checkpoint(tmp_path, monkeypatch):
     # The first two rows are safe to retain, but the next run must retry the
     # same interval because the successful-run checkpoint was not advanced.
     assert db.counts()["papers"] == 2
-    assert db.get_state(FETCH_STATE_KEY) is None
+    assert db.get_state(FETCH_KEY) is None
+
+
+def test_new_query_final_page_failure_retains_rows_without_checkpoint(
+    tmp_path, monkeypatch
+):
+    now = datetime(2026, 6, 24, 12, tzinfo=UTC)
+    previous = now - timedelta(days=1)
+
+    class FailingClient(FakeClient):
+        def results(self, search: arxiv.Search):
+            if search.sort_by == arxiv.SortCriterion.SubmittedDate:
+                yield fake_result(1, updated=now)
+                raise RuntimeError("final page failed")
+            return
+
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FailingClient)
+    db = Database(tmp_path / "test.sqlite3")
+    db.set_state(FETCH_KEY, previous.isoformat())
+
+    with pytest.raises(RuntimeError, match="final page failed"):
+        fetch_recent_papers(
+            db,
+            categories=["cs.LG"],
+            max_results=10,
+            scan_revisions=False,
+            now=now,
+        )
+
+    assert db.counts()["papers"] == 1
+    assert db.get_state(FETCH_KEY) == previous.isoformat()
 
 
 def test_three_day_gap_after_checkpoint_misses_nothing(tmp_path, monkeypatch):
@@ -120,7 +184,35 @@ def test_three_day_gap_after_checkpoint_misses_nothing(tmp_path, monkeypatch):
     assert db.counts()["papers"] == 3
 
     # 3. The checkpoint advanced to day3 only after the complete, uncapped run.
-    assert db.get_state(FETCH_STATE_KEY) == day3.isoformat()
+    assert db.get_state(FETCH_KEY) == day3.isoformat()
+
+
+def test_different_category_set_uses_its_own_first_run_window(tmp_path, monkeypatch):
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
+    db = Database(tmp_path / "test.sqlite3")
+    first_run = datetime(2026, 6, 20, 12, tzinfo=UTC)
+    second_run = first_run + timedelta(days=3)
+    FakeClient.new_results = []
+    FakeClient.revision_results = []
+
+    fetch_recent_papers(
+        db,
+        categories=["cs.LG"],
+        max_results=10,
+        scan_revisions=False,
+        first_run_lookback_hours=24,
+        now=first_run,
+    )
+    report = fetch_recent_papers(
+        db,
+        categories=["cs.RO"],
+        max_results=10,
+        scan_revisions=False,
+        first_run_lookback_hours=72,
+        now=second_run,
+    )
+
+    assert report.start_utc == second_run - timedelta(hours=72)
 
 
 def test_query_with_cs_ro_exact_expression():
@@ -192,5 +284,122 @@ def test_revision_scan_updates_existing_paper(tmp_path, monkeypatch):
 
     assert report.updated == 1
     assert db.get_paper("2606.00001").version == 2
-    assert db.get_state(FETCH_STATE_KEY) == now.isoformat()
-    assert db.get_state(UPDATE_STATE_KEY) == now.isoformat()
+    assert db.get_state(FETCH_KEY) == now.isoformat()
+    assert db.get_state(UPDATE_KEY) == now.isoformat()
+
+
+def test_revision_old_sentinel_reaches_cutoff_without_saturation(
+    tmp_path, monkeypatch
+):
+    now = datetime(2026, 6, 24, 12, tzinfo=UTC)
+    FakeClient.new_results = []
+    FakeClient.revision_results = [
+        fake_result(1, updated=now - timedelta(hours=1)),
+        fake_result(99, updated=now - timedelta(days=2)),
+    ]
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
+    db = Database(tmp_path / "test.sqlite3")
+
+    report = fetch_recent_papers(
+        db,
+        categories=["cs.LG"],
+        max_results=10,
+        revision_max_results=1,
+        revision_first_run_lookback_hours=24,
+        now=now,
+    )
+
+    assert report.unique_results_processed == 1
+    assert db.get_state(FETCH_KEY) == now.isoformat()
+    assert db.get_state(UPDATE_KEY) == now.isoformat()
+
+
+def test_saturated_revision_query_does_not_advance_either_checkpoint(
+    tmp_path, monkeypatch
+):
+    now = datetime(2026, 6, 24, 12, tzinfo=UTC)
+    previous = now - timedelta(days=1)
+    FakeClient.new_results = []
+    FakeClient.revision_results = [
+        fake_result(1, updated=now - timedelta(hours=1)),
+        fake_result(2, updated=now - timedelta(hours=2)),
+    ]
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
+    db = Database(tmp_path / "test.sqlite3")
+    db.set_state(FETCH_KEY, previous.isoformat())
+    db.set_state(UPDATE_KEY, previous.isoformat())
+
+    with pytest.raises(RuntimeError, match="revision-max-results"):
+        fetch_recent_papers(
+            db,
+            categories=["cs.LG"],
+            max_results=10,
+            revision_max_results=1,
+            now=now,
+        )
+
+    assert db.get_paper("2606.00001") is not None
+    assert db.get_state(FETCH_KEY) == previous.isoformat()
+    assert db.get_state(UPDATE_KEY) == previous.isoformat()
+
+
+def test_revision_final_page_failure_retains_rows_without_advancing_checkpoints(
+    tmp_path, monkeypatch
+):
+    now = datetime(2026, 6, 24, 12, tzinfo=UTC)
+    previous = now - timedelta(days=1)
+
+    class FailingRevisionClient(FakeClient):
+        def results(self, search: arxiv.Search):
+            if search.sort_by == arxiv.SortCriterion.SubmittedDate:
+                return
+            yield fake_result(1, version=2, updated=now - timedelta(hours=1))
+            raise RuntimeError("revision final page failed")
+
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FailingRevisionClient)
+    db = Database(tmp_path / "test.sqlite3")
+    db.set_state(FETCH_KEY, previous.isoformat())
+    db.set_state(UPDATE_KEY, previous.isoformat())
+
+    with pytest.raises(RuntimeError, match="revision final page failed"):
+        fetch_recent_papers(
+            db,
+            categories=["cs.LG"],
+            max_results=10,
+            revision_max_results=10,
+            now=now,
+        )
+
+    assert db.get_paper("2606.00001").version == 2
+    assert db.get_state(FETCH_KEY) == previous.isoformat()
+    assert db.get_state(UPDATE_KEY) == previous.isoformat()
+
+
+def test_checkpoint_updates_are_atomic(tmp_path, monkeypatch):
+    now = datetime(2026, 6, 24, 12, tzinfo=UTC)
+    FakeClient.new_results = []
+    FakeClient.revision_results = []
+    monkeypatch.setattr("arxiv_kg.fetcher.arxiv.Client", FakeClient)
+    db = Database(tmp_path / "test.sqlite3")
+    with db.connect() as con:
+        con.execute(
+            f"""
+            CREATE TRIGGER fail_revision_checkpoint
+            BEFORE INSERT ON pipeline_state
+            WHEN NEW.state_key = '{UPDATE_KEY}'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced checkpoint failure');
+            END;
+            """
+        )
+
+    with pytest.raises(sqlite3.IntegrityError, match="forced checkpoint failure"):
+        fetch_recent_papers(
+            db,
+            categories=["cs.LG"],
+            max_results=10,
+            now=now,
+        )
+
+    assert db.get_state(FETCH_KEY) is None
+    assert db.get_state(UPDATE_KEY) is None

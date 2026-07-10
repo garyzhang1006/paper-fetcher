@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -18,6 +19,7 @@ from .models import PaperRecord
 LOGGER = logging.getLogger(__name__)
 FETCH_STATE_KEY = "last_successful_arxiv_fetch_utc"
 UPDATE_STATE_KEY = "last_successful_arxiv_revision_scan_utc"
+ARXIV_CATEGORY_RE = re.compile(r"^[A-Za-z]+(?:[.-][A-Za-z]+)+$")
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,13 @@ class FetchReport:
     inserted: int
     updated: int
     unchanged: int
+
+
+def category_state_key(base_key: str, categories: list[str]) -> str:
+    """Scope a checkpoint to an order-independent category set."""
+
+    category_set = ",".join(sorted(set(categories)))
+    return f"{base_key}:{category_set}"
 
 
 def _category_part(categories: list[str]) -> str:
@@ -114,7 +123,9 @@ def fetch_recent_papers(
         raise ValueError("Result limits must be positive")
 
     end_utc = (now or datetime.now(UTC)).astimezone(UTC)
-    previous = db.get_state(FETCH_STATE_KEY)
+    fetch_state_key = category_state_key(FETCH_STATE_KEY, categories)
+    update_state_key = category_state_key(UPDATE_STATE_KEY, categories)
+    previous = db.get_state(fetch_state_key)
     if previous:
         start_utc = datetime.fromisoformat(previous).astimezone(UTC) - timedelta(
             hours=overlap_hours
@@ -124,7 +135,7 @@ def fetch_recent_papers(
 
     revision_start_utc: datetime | None = None
     if scan_revisions:
-        previous_revision = db.get_state(UPDATE_STATE_KEY)
+        previous_revision = db.get_state(update_state_key)
         if previous_revision:
             revision_start_utc = datetime.fromisoformat(previous_revision).astimezone(
                 UTC
@@ -189,11 +200,11 @@ def fetch_recent_papers(
         revision_query_saturated = False
         for result in client.results(revision_search):
             revision_received += 1
-            if revision_received > revision_max_results:
-                revision_query_saturated = True
-                break
             if result.updated.astimezone(UTC) < revision_start_utc:
                 reached_cutoff = True
+                break
+            if revision_received > revision_max_results:
+                revision_query_saturated = True
                 break
             versioned_id = result.get_short_id()
             if versioned_id in seen_versioned_ids:
@@ -209,9 +220,10 @@ def fetch_recent_papers(
                 "time cutoff. Increase the limit; checkpoints were not advanced."
             )
 
-    db.set_state(FETCH_STATE_KEY, end_utc.isoformat())
+    checkpoints = {fetch_state_key: end_utc.isoformat()}
     if scan_revisions:
-        db.set_state(UPDATE_STATE_KEY, end_utc.isoformat())
+        checkpoints[update_state_key] = end_utc.isoformat()
+    db.set_states(checkpoints)
 
     return FetchReport(
         start_utc=start_utc,
