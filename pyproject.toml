@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arxiv-kg"
+version = "0.1.0"
+description = "arXiv paper fetching and knowledge-graph bootcamp code"
+requires-python = ">=3.10"
+dependencies = ["arxiv", "pydantic", "requests"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
