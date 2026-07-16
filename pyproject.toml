@@ -11,7 +11,9 @@ requires-python = ">=3.11"
 dependencies = [
   "arxiv>=4.0,<5",
   "pydantic>=2.7,<3",
+  "PyMuPDF>=1.24,<2",
   "requests>=2.32,<3",
+  "scikit-learn>=1.5,<2",
 ]
 
 [project.scripts]
@@ -20,6 +22,13 @@ paper-fetcher-daily = "arxiv_kg.daily:main"
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
+llm = ["openai>=2,<3"]
+notebooks = [
+  "ipykernel>=6,<8",
+  "jupyterlab>=4,<5",
+  "nbclient>=0.10,<1",
+  "nbformat>=5,<6",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

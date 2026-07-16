@@ -81,3 +81,28 @@ pytest
 Package source lives in `src/arxiv_kg/`. The fetcher stores paper metadata and
 idempotent checkpoints in SQLite, while `download_pdf` validates the arXiv host
 and PDF header before replacing the destination file.
+
+## Tutorial 2: feature extraction
+
+`notebooks/02_feature_extractor.ipynb` is a complete offline tutorial for
+turning stored papers into typed semantic features. It includes a deterministic
+rules baseline, gold-label precision/recall/F1 evaluation, evidence coverage,
+PDF text extraction, section-aware prompt selection, extractor versioning, and
+all exercise solutions.
+
+Install notebook dependencies and start JupyterLab:
+
+```bash
+python -m pip install -e '.[test,notebooks]'
+jupyter lab notebooks/02_feature_extractor.ipynb
+```
+
+The optional OpenAI backend is disabled in the notebook. To install its SDK:
+
+```bash
+python -m pip install -e '.[llm]'
+```
+
+The rules backend requires no API key or network access. Feature JSON is stored
+with source paper version, extractor version, and prompt version so changed
+papers or extraction configurations are selected for reprocessing.
