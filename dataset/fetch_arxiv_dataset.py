@@ -7,8 +7,11 @@ reproducible without installing the project package.
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
+import re
 import time
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
@@ -29,6 +32,8 @@ PAGE_SIZE = 2000
 REQUEST_DELAY_SECONDS = 3.0
 USER_AGENT = "codex-dataset-builder/1.0 (local arxiv dataset export)"
 API_URL = "https://export.arxiv.org/api/query"
+TARGET_PAPER_COUNT = 9000
+LOW_QUALITY_MARKERS = re.compile(r"\b(withdrawn|retracted)\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -160,7 +165,95 @@ def fetch_day(window: DayWindow) -> tuple[int, list[dict[str, object]]]:
     return total, papers
 
 
-def write_outputs(output_dir: Path, counts: list[dict[str, object]], papers: list[dict[str, object]]) -> None:
+def quality_score(paper: dict[str, object]) -> tuple[int, int, int, int, str]:
+    title = str(paper.get("title") or "")
+    abstract = str(paper.get("abstract") or "")
+    searchable_text = f"{title} {abstract}"
+    title_word_count = len(title.split())
+    metadata_fields = ("doi", "journal_ref", "comment")
+    metadata_count = sum(bool(paper.get(field)) for field in metadata_fields)
+    category_count = len(paper.get("categories") or [])
+    stable_tiebreaker = hashlib.sha256(
+        str(paper.get("versioned_id") or "").encode("utf-8")
+    ).hexdigest()
+    return (
+        not bool(LOW_QUALITY_MARKERS.search(searchable_text)),
+        min(len(abstract.split()), 250),
+        metadata_count,
+        int(4 <= title_word_count <= 30) + min(category_count, 3),
+        stable_tiebreaker,
+    )
+
+
+def category_quotas(
+    category_sizes: dict[str, int], target: int
+) -> dict[str, int]:
+    total = sum(category_sizes.values())
+    if target >= total:
+        return dict(category_sizes)
+    if target < len(category_sizes):
+        raise ValueError("target must retain at least one paper per category")
+
+    quotas = {category: 1 for category in category_sizes}
+    remaining_target = target - len(quotas)
+    remaining_population = total - len(quotas)
+    remainders: list[tuple[float, str]] = []
+    for category, size in category_sizes.items():
+        share = remaining_target * (size - 1) / remaining_population
+        extra = int(share)
+        quotas[category] += extra
+        remainders.append((share - extra, category))
+
+    unassigned = target - sum(quotas.values())
+    for _, category in sorted(remainders, reverse=True)[:unassigned]:
+        quotas[category] += 1
+    return quotas
+
+
+def curate_papers(
+    papers: list[dict[str, object]], target: int = TARGET_PAPER_COUNT
+) -> list[dict[str, object]]:
+    if target >= len(papers):
+        return papers
+
+    by_category: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for paper in papers:
+        category = str(paper.get("primary_category") or "(missing)")
+        by_category[category].append(paper)
+
+    quotas = category_quotas(
+        {category: len(group) for category, group in by_category.items()},
+        target,
+    )
+    retained_ids: set[str] = set()
+    for category, group in by_category.items():
+        ranked = sorted(group, key=quality_score, reverse=True)
+        retained_ids.update(
+            str(paper["versioned_id"])
+            for paper in ranked[: quotas[category]]
+        )
+
+    return [
+        paper
+        for paper in papers
+        if str(paper["versioned_id"]) in retained_ids
+    ]
+
+
+def daily_counts(papers: list[dict[str, object]]) -> list[dict[str, object]]:
+    counts = Counter(str(paper["submitted_date"]) for paper in papers)
+    return [
+        {"date": day.isoformat(), "paper_count": counts[day.isoformat()]}
+        for day in iter_days(START_DATE, END_DATE)
+    ]
+
+
+def write_outputs(
+    output_dir: Path,
+    counts: list[dict[str, object]],
+    papers: list[dict[str, object]],
+    source_paper_count: int,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with (output_dir / "papers.jsonl").open("w", encoding="utf-8") as handle:
@@ -189,6 +282,13 @@ def write_outputs(output_dir: Path, counts: list[dict[str, object]], papers: lis
                 },
                 "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
                 "sort": {"sortBy": "submittedDate", "sortOrder": "ascending"},
+                "curation": {
+                    "method": "metadata-quality ranking with proportional primary-category quotas",
+                    "target_paper_count": TARGET_PAPER_COUNT,
+                    "removed_paper_count": source_paper_count - len(papers),
+                    "preserves_every_primary_category": True,
+                },
+                "source_paper_count": source_paper_count,
                 "paper_count": len(papers),
                 "fetched_at": datetime.now(timezone.utc).isoformat(),
             },
@@ -201,18 +301,24 @@ def write_outputs(output_dir: Path, counts: list[dict[str, object]], papers: lis
 
 
 def main() -> int:
-    counts: list[dict[str, object]] = []
     papers: list[dict[str, object]] = []
     for day in iter_days(START_DATE, END_DATE):
-        if counts:
+        if papers:
             time.sleep(REQUEST_DELAY_SECONDS)
         total, day_papers = fetch_day(DayWindow(day))
-        counts.append({"date": day.isoformat(), "paper_count": total})
         papers.extend(day_papers)
         print(f"{day.isoformat()} {total}")
 
-    write_outputs(Path(__file__).resolve().parent, counts, papers)
-    print(f"total {len(papers)}")
+    source_paper_count = len(papers)
+    papers = curate_papers(papers)
+    write_outputs(
+        Path(__file__).resolve().parent,
+        daily_counts(papers),
+        papers,
+        source_paper_count,
+    )
+    print(f"source {source_paper_count}")
+    print(f"retained {len(papers)}")
     return 0
 
 

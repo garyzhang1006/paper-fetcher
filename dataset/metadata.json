@@ -1,17 +1,24 @@
 {
   "api_manual": "https://info.arxiv.org/help/api/user-manual.html",
+  "curation": {
+    "method": "metadata-quality ranking with proportional primary-category quotas",
+    "preserves_every_primary_category": true,
+    "removed_paper_count": 2070,
+    "target_paper_count": 9000
+  },
   "date_range": {
     "end": "2026-07-15",
     "inclusive": true,
     "start": "2026-07-03",
     "timezone": "UTC"
   },
-  "fetched_at": "2026-07-16T03:53:45.728822+00:00",
-  "paper_count": 11070,
+  "fetched_at": "2026-07-16T03:57:12.190587+00:00",
+  "paper_count": 9000,
   "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
   "sort": {
     "sortBy": "submittedDate",
     "sortOrder": "ascending"
   },
-  "source": "https://export.arxiv.org/api/query"
+  "source": "https://export.arxiv.org/api/query",
+  "source_paper_count": 11070
 }
