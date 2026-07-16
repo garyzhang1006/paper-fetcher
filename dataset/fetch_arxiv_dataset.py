@@ -1,4 +1,4 @@
-"""Fetch arXiv submission metadata for the July 3-10, 2026 dataset.
+"""Fetch arXiv submission metadata for the July 3-15, 2026 dataset.
 
 The script uses the official arXiv API directly so the exported files are
 reproducible without installing the project package.
@@ -24,7 +24,7 @@ OPENSEARCH = "http://a9.com/-/spec/opensearch/1.1/"
 NS = {"atom": ATOM, "arxiv": ARXIV, "opensearch": OPENSEARCH}
 
 START_DATE = date(2026, 7, 3)
-END_DATE = date(2026, 7, 10)
+END_DATE = date(2026, 7, 15)
 PAGE_SIZE = 2000
 REQUEST_DELAY_SECONDS = 3.0
 USER_AGENT = "codex-dataset-builder/1.0 (local arxiv dataset export)"
@@ -168,14 +168,14 @@ def write_outputs(output_dir: Path, counts: list[dict[str, object]], papers: lis
             handle.write(json.dumps(paper, ensure_ascii=False, sort_keys=True) + "\n")
 
     with (output_dir / "daily_counts.csv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["date", "paper_count"])
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["date", "paper_count"],
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(counts)
 
-    (output_dir / "daily_counts.json").write_text(
-        json.dumps(counts, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
     (output_dir / "metadata.json").write_text(
         json.dumps(
             {

@@ -1,13 +1,13 @@
 {
   "api_manual": "https://info.arxiv.org/help/api/user-manual.html",
   "date_range": {
-    "end": "2026-07-10",
+    "end": "2026-07-15",
     "inclusive": true,
     "start": "2026-07-03",
     "timezone": "UTC"
   },
-  "fetched_at": "2026-07-10T19:12:16.718278+00:00",
-  "paper_count": 5886,
+  "fetched_at": "2026-07-16T03:53:45.728822+00:00",
+  "paper_count": 11070,
   "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
   "sort": {
     "sortBy": "submittedDate",
