@@ -27,6 +27,7 @@ notebooks = [
   "ipykernel>=6,<8",
   "jupyterlab>=4,<5",
   "nbclient>=0.10,<1",
+  "nbconvert>=7,<8",
   "nbformat>=5,<6",
 ]
 

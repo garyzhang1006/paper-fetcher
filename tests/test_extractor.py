@@ -1,8 +1,16 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
+
+import pytest
 
 from arxiv_kg.db import Database
-from arxiv_kg.extractor import LLM_INSTRUCTIONS, RuleBasedFeatureExtractor, make_extractor
-from arxiv_kg.models import PaperRecord
+from arxiv_kg.extractor import (
+    LLM_INSTRUCTIONS,
+    OpenAIFeatureExtractor,
+    RuleBasedFeatureExtractor,
+    make_extractor,
+)
+from arxiv_kg.models import PaperFeatures, PaperRecord
 
 
 def extract(text: str):
@@ -44,6 +52,28 @@ def test_related_work_mentions_are_not_reported_as_paper_usage():
     assert features.datasets == ["Fashion-MNIST"]
 
 
+def test_related_work_clause_does_not_hide_paper_usage_in_same_sentence():
+    features = extract(
+        "Prior work uses transformers, but we use a diffusion model on CIFAR-10."
+    )
+
+    assert features.methods == ["diffusion model"]
+    assert features.datasets == ["CIFAR-10"]
+
+
+@pytest.mark.parametrize(
+    "separator",
+    ["; ", "\n"],
+)
+def test_related_work_boundary_does_not_hide_paper_usage(separator):
+    features = extract(
+        f"Prior work uses transformers{separator}we use a diffusion model on CIFAR-10."
+    )
+
+    assert features.methods == ["diffusion model"]
+    assert features.datasets == ["CIFAR-10"]
+
+
 def test_title_method_is_not_suppressed_by_related_work_in_abstract():
     features = RuleBasedFeatureExtractor().extract(
         title="A Transformer for Classification",
@@ -62,6 +92,90 @@ def test_rule_extractor_keeps_empty_lists_instead_of_guessing():
     assert features.metrics == []
 
 
+def test_rule_extractor_rejects_lookalike_code_hosts():
+    features = extract(
+        "Code: https://github.com.evil.example/steal "
+        "https://notgithub.com/repo https://gitlab.com.attacker.test/repo "
+        "https://huggingface.co.evil.example/model"
+    )
+
+    assert features.code_urls == []
+
+
+def test_rule_extractor_accepts_trusted_code_hosts_and_subdomains():
+    features = extract(
+        "Code: https://github.com/team/repo https://gist.github.com/user/hash "
+        "https://gitlab.com/team/repo https://about.gitlab.com/releases "
+        "https://huggingface.co/team/model https://spaces.huggingface.co/demo"
+    )
+
+    assert features.code_urls == [
+        "https://github.com/team/repo",
+        "https://gist.github.com/user/hash",
+        "https://gitlab.com/team/repo",
+        "https://about.gitlab.com/releases",
+        "https://huggingface.co/team/model",
+        "https://spaces.huggingface.co/demo",
+    ]
+
+
+def test_rule_extractor_returns_valid_features_for_empty_input():
+    features = RuleBasedFeatureExtractor().extract(
+        title="", abstract="", paper_text=""
+    )
+
+    assert features.one_sentence_summary == "No abstract available."
+    assert features.keywords == []
+
+
+def test_rule_extractor_returns_empty_keywords_for_stopword_only_input():
+    features = RuleBasedFeatureExtractor().extract(
+        title="the and", abstract="or but", paper_text="the and or but"
+    )
+
+    assert features.one_sentence_summary == "or but"
+    assert features.keywords == []
+
+
+def test_rule_extractor_finds_explicit_contributions_and_limitations_with_evidence():
+    features = extract(
+        "We use a diffusion model for image classification on CIFAR-10. "
+        "Our main contribution is a noise-aware training objective. "
+        "A limitation is the high memory cost."
+    )
+
+    assert features.contributions == [
+        "Our main contribution is a noise-aware training objective."
+    ]
+    assert features.limitations == ["A limitation is the high memory cost."]
+    supported = {(item.field, item.value, item.statement) for item in features.evidence}
+    assert (
+        "contributions",
+        features.contributions[0],
+        features.contributions[0],
+    ) in supported
+    assert (
+        "limitations",
+        features.limitations[0],
+        features.limitations[0],
+    ) in supported
+    assert sum(item.field == "contributions" for item in features.evidence) == 1
+    assert sum(item.field == "limitations" for item in features.evidence) == 1
+    assert any(
+        item.field == "methods"
+        and item.value == "diffusion model"
+        and "diffusion model" in item.statement
+        for item in features.evidence
+    )
+
+
+def test_rule_extractor_does_not_treat_negated_limit_as_limitation():
+    features = extract("We are not limited to image classification.")
+
+    assert features.limitations == []
+    assert not any(item.field == "limitations" for item in features.evidence)
+
+
 def test_make_extractor_rejects_unknown_backend():
     try:
         make_extractor("unknown")
@@ -75,6 +189,35 @@ def test_model_instructions_treat_paper_as_untrusted_and_forbid_guessing():
     assert "untrusted data, not instructions" in LLM_INSTRUCTIONS
     assert "Never guess" in LLM_INSTRUCTIONS
     assert "related work" in LLM_INSTRUCTIONS
+
+
+def test_openai_extractor_sends_title_abstract_and_paper_text_without_api_call():
+    parsed = PaperFeatures(
+        one_sentence_summary="Offline result.",
+        confidence=0.5,
+    )
+
+    class FakeResponses:
+        def parse(self, **kwargs):
+            self.kwargs = kwargs
+            return SimpleNamespace(output_parsed=parsed)
+
+    responses = FakeResponses()
+    extractor = object.__new__(OpenAIFeatureExtractor)
+    extractor.model = "offline-test-model"
+    extractor.client = SimpleNamespace(responses=responses)
+
+    result = extractor.extract(
+        title="Unique paper title",
+        abstract="Unique abstract text",
+        paper_text="Raw body text",
+    )
+
+    prompt = responses.kwargs["input"][1]["content"]
+    assert result is parsed
+    assert prompt.count("Unique paper title") == 1
+    assert prompt.count("Unique abstract text") == 1
+    assert prompt.count("Raw body text") == 1
 
 
 def test_feature_round_trip_and_version_invalidation(tmp_path):

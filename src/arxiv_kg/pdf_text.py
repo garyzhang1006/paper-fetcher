@@ -55,8 +55,23 @@ def _section_aware_selection(full_text: str, budget: int) -> str | None:
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(full_text)
         sections.append(full_text[match.start():end].strip())
-    selected = "\n\n".join(sections)
-    return selected[:budget]
+    separator = "\n\n"
+    selected = separator.join(sections)
+    if len(selected) <= budget:
+        return selected
+
+    separator_budget = len(separator) * (len(sections) - 1)
+    if separator_budget >= budget:
+        headings = separator.join(section.splitlines()[0] for section in sections)
+        return headings[:budget]
+
+    content_budget = budget - separator_budget
+    per_section, extra = divmod(content_budget, len(sections))
+    selected_sections = [
+        section[: per_section + (index < extra)]
+        for index, section in enumerate(sections)
+    ]
+    return separator.join(selected_sections)
 
 
 def select_text_for_llm(
@@ -67,8 +82,8 @@ def select_text_for_llm(
     if max_characters < 1:
         raise ValueError("max_characters must be positive")
     header = f"TITLE\n{title}\n\nABSTRACT\n{abstract}\n"
-    if len(header) >= max_characters:
-        return header[:max_characters]
+    if len(header) > max_characters:
+        raise ValueError("max_characters must fit the complete title and abstract")
     if not full_text:
         return header
     remaining = max_characters - len(header)
@@ -78,12 +93,17 @@ def select_text_for_llm(
 
     section_prefix = "\nPRIORITIZED PAPER SECTIONS\n"
     fallback_prefix = "\nSELECTED FULL PAPER TEXT\n"
-    section_budget = max(remaining - len(section_prefix), 0)
-    selected = _section_aware_selection(full_text, section_budget)
-    if selected is None:
-        fallback_budget = max(remaining - len(fallback_prefix), 0)
+    has_priority_sections = SECTION_RE.search(full_text) is not None
+    if has_priority_sections:
+        section_budget = remaining - len(section_prefix)
+        if section_budget <= 0:
+            return header
+        selected = _section_aware_selection(full_text, section_budget)
+        prefix = section_prefix
+    else:
+        fallback_budget = remaining - len(fallback_prefix)
+        if fallback_budget <= 0:
+            return header
         selected = _head_tail(full_text, fallback_budget)
         prefix = fallback_prefix
-    else:
-        prefix = section_prefix
     return header + prefix + selected

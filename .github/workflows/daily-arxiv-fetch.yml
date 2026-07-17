@@ -27,15 +27,28 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install package and test dependencies
-        run: python -m pip install '.[test]'
+      - name: Install package, test, and notebook dependencies
+        run: python -m pip install '.[test,notebooks]'
 
       - name: Test before network update
-        run: python -m pytest
+        run: |
+          python -c "import arxiv_kg"
+          python -m pytest
+
+      - name: Execute Notebook 2 offline
+        env:
+          RUN_LLM: "false"
+        run: >-
+          python -m jupyter nbconvert
+          --to notebook
+          --execute notebooks/02_feature_extractor.ipynb
+          --output 02_feature_extractor.executed.ipynb
+          --output-dir "${RUNNER_TEMP}"
+          --ExecutePreprocessor.timeout=180
 
       - name: Fetch bounded daily update
         run: >-

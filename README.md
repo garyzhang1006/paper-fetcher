@@ -93,14 +93,14 @@ all exercise solutions.
 Install notebook dependencies and start JupyterLab:
 
 ```bash
-python -m pip install -e '.[test,notebooks]'
+python -m pip install '.[test,notebooks]'
 jupyter lab notebooks/02_feature_extractor.ipynb
 ```
 
 The optional OpenAI backend is disabled in the notebook. To install its SDK:
 
 ```bash
-python -m pip install -e '.[llm]'
+python -m pip install '.[llm]'
 ```
 
 The rules backend requires no API key or network access. Feature JSON is stored

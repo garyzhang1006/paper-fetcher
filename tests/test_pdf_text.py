@@ -53,6 +53,28 @@ def test_section_aware_selector_prioritizes_useful_sections():
     assert "background background" not in selected
 
 
+def test_section_selector_preserves_each_priority_section_under_tight_budget():
+    full_text = (
+        "METHODS\n" + "method detail " * 100 + "\n"
+        "EXPERIMENTS\n" + "experiment detail " * 100 + "\n"
+        "LIMITATIONS\nSmall fictional sample.\n"
+        "CONCLUSION\nThe method needs more evaluation.\n"
+    )
+
+    selected = select_text_for_llm(
+        title="Paper",
+        abstract="Abstract.",
+        full_text=full_text,
+        max_characters=400,
+    )
+
+    assert len(selected) <= 400
+    assert "METHODS" in selected
+    assert "EXPERIMENTS" in selected
+    assert "LIMITATIONS" in selected
+    assert "CONCLUSION" in selected
+
+
 def test_selector_falls_back_to_head_and_tail_without_sections():
     full_text = "BEGIN " + "middle " * 200 + " END"
 
@@ -75,3 +97,28 @@ def test_selector_rejects_nonpositive_budget():
         select_text_for_llm(
             title="Paper", abstract="Abstract.", full_text=None, max_characters=0
         )
+
+
+def test_selector_rejects_budget_that_cannot_hold_title_and_abstract():
+    with pytest.raises(ValueError, match="title and abstract"):
+        select_text_for_llm(
+            title="Long title",
+            abstract="Long abstract",
+            full_text=None,
+            max_characters=10,
+        )
+
+
+def test_selector_never_exceeds_budget_when_only_one_character_remains():
+    header = "TITLE\nT\n\nABSTRACT\nA\n"
+    max_characters = len(header) + 1
+
+    selected = select_text_for_llm(
+        title="T",
+        abstract="A",
+        full_text="METHODS\n" + "x" * 100,
+        max_characters=max_characters,
+    )
+
+    assert selected == header
+    assert len(selected) <= max_characters
