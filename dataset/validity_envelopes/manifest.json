@@ -1,0 +1,79 @@
+{
+  "extractor": "abstract-validity-rules",
+  "extractor_version": "1.0",
+  "paper_with_envelopes_count": 3955,
+  "paper_without_supported_claim_count": 5045,
+  "processed_paper_count": 9000,
+  "schema_version": 1,
+  "shards": [
+    {
+      "file": "2026-07-03.jsonl",
+      "paper_count": 689,
+      "sha256": "ec97c51a92660df61fef05b9ce5749b50f7f721b0fc2c67dd0f20a1e2a5b0a25"
+    },
+    {
+      "file": "2026-07-04.jsonl",
+      "paper_count": 354,
+      "sha256": "4100455821e0857de6ddf37ed2ab84119098bd2b5f40f040e4126be3e194f479"
+    },
+    {
+      "file": "2026-07-05.jsonl",
+      "paper_count": 424,
+      "sha256": "3a58365a49f2073917599ba43f08eda616389248d0c6822725efc42fa2253a65"
+    },
+    {
+      "file": "2026-07-06.jsonl",
+      "paper_count": 890,
+      "sha256": "848d14457a5b43ba2dccd81346d990950b5f0866d614f389e88a844c3152ab0b"
+    },
+    {
+      "file": "2026-07-07.jsonl",
+      "paper_count": 946,
+      "sha256": "c348544f25be04c3a07104a236bf577a880cebf2b0bbfbf763cec1b9e25694bb"
+    },
+    {
+      "file": "2026-07-08.jsonl",
+      "paper_count": 893,
+      "sha256": "2aa64d5d92d803e8a4f4362d0b85eefc3d161d00567061b434fe16f5518e062e"
+    },
+    {
+      "file": "2026-07-09.jsonl",
+      "paper_count": 812,
+      "sha256": "a885f3072d2c492d4a8afa74d12088edc472ab74bd60d0493e9846c0d0f8c6d8"
+    },
+    {
+      "file": "2026-07-10.jsonl",
+      "paper_count": 749,
+      "sha256": "9efd7e371017047904f5cba014bc286172395fbc5f62c05062caf7d9de3dde20"
+    },
+    {
+      "file": "2026-07-11.jsonl",
+      "paper_count": 390,
+      "sha256": "7cc47606761033265df8880cc83bda3cc7b99f59fea3ccd7bb343a16c3abc4fa"
+    },
+    {
+      "file": "2026-07-12.jsonl",
+      "paper_count": 378,
+      "sha256": "0913540ff0cd01c725344b0b57a5e7e9dc1ed391d5205b3b5ed089a5113fcced"
+    },
+    {
+      "file": "2026-07-13.jsonl",
+      "paper_count": 980,
+      "sha256": "f381afbc2490018aa153de5396083cb1b910e463a99106a905c240c12cc0664c"
+    },
+    {
+      "file": "2026-07-14.jsonl",
+      "paper_count": 875,
+      "sha256": "a88a8f08764313adae6a02203c77e45f015f7a5ab8cc823f786d1451e3c0e70a"
+    },
+    {
+      "file": "2026-07-15.jsonl",
+      "paper_count": 620,
+      "sha256": "09d3f0f6c4e3b56efa636ee9b59127a7300e7df9d5bd07518014bc7750bba930"
+    }
+  ],
+  "source_file": "papers.jsonl",
+  "source_scope": "abstract",
+  "source_sha256": "b5069e0e7514663a984e5ddd7f3e99ed94b44a7dbbec8cdef95aa5052cd68ff7",
+  "validity_envelope_count": 4937
+}

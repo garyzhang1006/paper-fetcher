@@ -10,8 +10,9 @@ from urllib.parse import urlsplit
 from sklearn.feature_extraction.text import CountVectorizer
 
 from .models import Evidence, FeatureField, PaperFeatures
+from .validity import extract_validity_envelopes
 
-EXTRACTOR_VERSION = "1.2"
+EXTRACTOR_VERSION = "1.3"
 PROMPT_VERSION = "paper-features-v1"
 
 METHOD_VOCABULARY = {
@@ -387,6 +388,7 @@ class RuleBasedFeatureExtractor(FeatureExtractor):
             code_urls=_code_urls(combined),
             keywords=_top_keywords(f"{title} {abstract}"),
             evidence=evidence,
+            validity_envelopes=extract_validity_envelopes(abstract),
             confidence=0.35,
         )
 
@@ -403,6 +405,7 @@ Rules:
 5. Keep the summary to one sentence and distinguish the authors' claim from proven fact.
 6. For each evidence item, set value to the exact extracted list item it supports. Keep the statement short (about 20 words at most), and provide a page number only when a PAGE marker supports it.
 7. Confidence measures support in the supplied text, not how impressive the paper seems. It is not a calibrated probability.
+8. For each validity envelope, preserve the supported claim and record only explicit comparators, evaluation contexts, metrics, effects, uncertainty, conditions, and boundaries. Leave unsupported fields empty.
 """
 
 

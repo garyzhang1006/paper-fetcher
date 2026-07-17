@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 paper-fetcher = "arxiv_kg.web:main"
 paper-fetcher-daily = "arxiv_kg.daily:main"
+paper-fetcher-validity = "arxiv_kg.validity_dataset:main"
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]

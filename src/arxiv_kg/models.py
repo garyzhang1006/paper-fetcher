@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class StrictModel(BaseModel):
@@ -62,6 +62,64 @@ class Evidence(StrictModel):
     page: int | None = Field(default=None, ge=1)
 
 
+ValidityClaimType = Literal[
+    "comparative",
+    "causal_language",
+    "associational",
+    "predictive",
+    "descriptive",
+]
+ValidityDirection = Literal["positive", "negative", "mixed", "unclear"]
+
+
+class ValidityEvidence(StrictModel):
+    """Verbatim support for one abstract- or full-text-level claim."""
+
+    source: Literal["abstract", "full_text"]
+    sentence_index: int = Field(ge=0)
+    statement: str = Field(min_length=1, max_length=1000)
+
+
+class ValidityEnvelope(StrictModel):
+    """Conditions and numeric support that bound one scientific claim."""
+
+    claim: str = Field(min_length=1, max_length=1000)
+    claim_type: ValidityClaimType
+    direction: ValidityDirection
+    comparators: list[str] = Field(default_factory=list)
+    evaluation_contexts: list[str] = Field(default_factory=list)
+    metrics: list[str] = Field(default_factory=list)
+    reported_values: list[str] = Field(default_factory=list)
+    effect_sizes: list[str] = Field(default_factory=list)
+    uncertainty: list[str] = Field(default_factory=list)
+    conditions: list[str] = Field(default_factory=list)
+    paper_level_boundaries: list[str] = Field(default_factory=list)
+    evidence: ValidityEvidence
+    confidence: float = Field(ge=0.0, le=1.0)
+
+    @field_validator(
+        "comparators",
+        "evaluation_contexts",
+        "metrics",
+        "reported_values",
+        "effect_sizes",
+        "uncertainty",
+        "conditions",
+        "paper_level_boundaries",
+    )
+    @classmethod
+    def remove_duplicate_strings(cls, values: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            normalized = " ".join(value.split()).strip(" ,;:")
+            key = normalized.casefold()
+            if normalized and key not in seen:
+                seen.add(key)
+                cleaned.append(normalized)
+        return cleaned
+
+
 class PaperFeatures(StrictModel):
     """A deliberately small ontology for a first knowledge graph."""
 
@@ -76,6 +134,7 @@ class PaperFeatures(StrictModel):
     code_urls: list[str] = Field(default_factory=list)
     keywords: list[str] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
+    validity_envelopes: list[ValidityEnvelope] = Field(default_factory=list)
     confidence: float = Field(ge=0.0, le=1.0)
 
     @field_validator(
@@ -112,3 +171,22 @@ class StoredFeatureRecord(StrictModel):
     prompt_version: str | None = None
     extracted_at: datetime
     features: PaperFeatures
+
+
+class PaperValidityRecord(StrictModel):
+    """Compact batch artifact joined back to source metadata by arXiv ID."""
+
+    arxiv_id: str = Field(min_length=1)
+    source_versioned_id: str = Field(min_length=1)
+    source_scope: Literal["abstract", "full_text"]
+    extractor: str = Field(min_length=1)
+    extractor_version: str = Field(min_length=1)
+    status: Literal["extracted", "no_supported_claim"]
+    validity_envelopes: list[ValidityEnvelope] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def status_matches_envelopes(self) -> Self:
+        expected = "extracted" if self.validity_envelopes else "no_supported_claim"
+        if self.status != expected:
+            raise ValueError(f"status must be {expected} for supplied envelopes")
+        return self

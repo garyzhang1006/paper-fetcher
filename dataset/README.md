@@ -10,6 +10,8 @@ Files:
 - `daily_counts.csv`: daily paper counts.
 - `metadata.json`: source URL, query template, range, total count, and fetch time.
 - `fetch_arxiv_dataset.py`: reproducible fetch script.
+- `validity_envelopes/`: one abstract-level validity record per paper, split
+  into daily JSONL shards with a hashed manifest.
 
 The script uses one UTC day query at a time:
 
@@ -30,3 +32,18 @@ quality filter, not a judgment of scientific validity.
 
 `daily_counts.csv` reports retained papers. `metadata.json` records source,
 retained, and removed totals plus the exact curation method.
+
+## Experimental validity envelopes
+
+Run `paper-fetcher-validity --expected-count 9000` from the repository root to
+rebuild `validity_envelopes/`. The extractor preserves explicit result claims
+and records supported comparators, contexts, metrics, numeric values, effect
+sizes, uncertainty, conditions, and boundary statements. Papers without an explicit abstract-level
+result claim receive `no_supported_claim` and an empty envelope list.
+
+Boundary statements are labeled paper-level because proximity in an abstract
+does not prove that a limitation applies to one particular claim. Confidence is
+an extraction-support heuristic, not the probability that a claim is true.
+
+No full-text PDFs are stored for these 9,000 papers. The output therefore does
+not claim table, figure, page, seed, or compute-budget evidence.

@@ -87,8 +87,8 @@ and PDF header before replacing the destination file.
 `notebooks/02_feature_extractor.ipynb` is a complete offline tutorial for
 turning stored papers into typed semantic features. It includes a deterministic
 rules baseline, gold-label precision/recall/F1 evaluation, evidence coverage,
-PDF text extraction, section-aware prompt selection, extractor versioning, and
-all exercise solutions.
+PDF text extraction, section-aware prompt selection, experimental validity
+envelopes, extractor versioning, and all exercise solutions.
 
 Install notebook dependencies and start JupyterLab:
 
@@ -106,3 +106,15 @@ python -m pip install '.[llm]'
 The rules backend requires no API key or network access. Feature JSON is stored
 with source paper version, extractor version, and prompt version so changed
 papers or extraction configurations are selected for reprocessing.
+
+Extract evidence-backed validity envelopes for the curated 9,000-paper dataset:
+
+```bash
+paper-fetcher-validity --expected-count 9000
+```
+
+Output is stored in date shards under `dataset/validity_envelopes/`. This pass
+uses abstracts only, so unavailable table, page, seed, and compute-budget fields
+remain empty rather than being guessed. Boundary statements are labeled
+paper-level unless the abstract explicitly ties them to a claim. Absolute
+reported values stay separate from comparative effect sizes.
