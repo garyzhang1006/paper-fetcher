@@ -50,9 +50,11 @@ def test_astrophysics_categories_are_excluded_after_curation():
     fetcher = load_dataset_fetcher()
     papers = [
         paper("astro", "astro-ph.GA", 30),
+        paper("condensed-matter", "cond-mat.mtrl-sci", 30),
+        paper("economics", "econ.EM", 30),
         paper("machine-learning", "cs.LG", 30),
     ]
 
     retained = fetcher.exclude_primary_categories(papers)
 
-    assert retained == [papers[1]]
+    assert retained == [papers[3]]

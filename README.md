@@ -107,10 +107,10 @@ The rules backend requires no API key or network access. Feature JSON is stored
 with source paper version, extractor version, and prompt version so changed
 papers or extraction configurations are selected for reprocessing.
 
-Extract evidence-backed validity envelopes for the curated 8,406-paper dataset:
+Extract evidence-backed validity envelopes for the curated 7,751-paper dataset:
 
 ```bash
-paper-fetcher-validity --expected-count 8406
+paper-fetcher-validity --expected-count 7751
 ```
 
 Output is stored in date shards under `dataset/validity_envelopes/`. This pass

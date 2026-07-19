@@ -1,13 +1,21 @@
 {
   "api_manual": "https://info.arxiv.org/help/api/user-manual.html",
   "curation": {
-    "excluded_paper_count": 594,
-    "excluded_primary_category_group": "Astrophysics",
-    "excluded_primary_category_prefix": "astro-ph.",
-    "method": "metadata-quality ranking with proportional primary-category quotas, followed by Astrophysics exclusion",
-    "post_curation_paper_count": 8406,
+    "excluded_paper_count": 1249,
+    "excluded_primary_category_groups": [
+      "Astrophysics",
+      "Condensed Matter",
+      "Economics"
+    ],
+    "excluded_primary_category_prefixes": [
+      "astro-ph.",
+      "cond-mat.",
+      "econ."
+    ],
+    "method": "metadata-quality ranking with proportional primary-category quotas, followed by subject-group exclusions",
+    "post_curation_paper_count": 7751,
     "preserves_every_primary_category": false,
-    "removed_paper_count": 2664,
+    "removed_paper_count": 3319,
     "target_paper_count": 9000
   },
   "date_range": {
@@ -17,7 +25,7 @@
     "timezone": "UTC"
   },
   "fetched_at": "2026-07-16T03:57:12.190587+00:00",
-  "paper_count": 8406,
+  "paper_count": 7751,
   "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
   "sort": {
     "sortBy": "submittedDate",

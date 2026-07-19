@@ -34,7 +34,7 @@ USER_AGENT = "codex-dataset-builder/1.0 (local arxiv dataset export)"
 API_URL = "https://export.arxiv.org/api/query"
 TARGET_PAPER_COUNT = 9000
 LOW_QUALITY_MARKERS = re.compile(r"\b(withdrawn|retracted)\b", re.IGNORECASE)
-EXCLUDED_PRIMARY_CATEGORY_PREFIXES = ("astro-ph.",)
+EXCLUDED_PRIMARY_CATEGORY_PREFIXES = ("astro-ph.", "cond-mat.", "econ.")
 
 
 @dataclass(frozen=True)
@@ -295,13 +295,19 @@ def write_outputs(
                 "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
                 "sort": {"sortBy": "submittedDate", "sortOrder": "ascending"},
                 "curation": {
-                    "method": "metadata-quality ranking with proportional primary-category quotas, followed by Astrophysics exclusion",
+                    "method": "metadata-quality ranking with proportional primary-category quotas, followed by subject-group exclusions",
                     "target_paper_count": TARGET_PAPER_COUNT,
                     "post_curation_paper_count": len(papers),
                     "removed_paper_count": source_paper_count - len(papers),
                     "preserves_every_primary_category": False,
-                    "excluded_primary_category_group": "Astrophysics",
-                    "excluded_primary_category_prefix": "astro-ph.",
+                    "excluded_primary_category_groups": [
+                        "Astrophysics",
+                        "Condensed Matter",
+                        "Economics",
+                    ],
+                    "excluded_primary_category_prefixes": list(
+                        EXCLUDED_PRIMARY_CATEGORY_PREFIXES
+                    ),
                 },
                 "source_paper_count": source_paper_count,
                 "paper_count": len(papers),

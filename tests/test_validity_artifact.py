@@ -18,7 +18,7 @@ def test_committed_validity_artifact_matches_all_source_papers():
     source_path = root / "dataset/papers.jsonl"
     output_dir = root / "dataset/validity_envelopes"
     manifest = json.loads((output_dir / "manifest.json").read_text())
-    assert manifest["processed_paper_count"] == 8406
+    assert manifest["processed_paper_count"] == 7751
     assert manifest["source_scope"] == "abstract"
     assert manifest["source_sha256"] == sha256(source_path)
 

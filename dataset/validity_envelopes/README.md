@@ -15,11 +15,11 @@ Confidence measures how many supported detail types were extracted. It is not a
 calibrated probability and does not estimate whether the scientific claim is true.
 
 These records do not claim table, figure, page, seed, or compute-budget evidence
-because the repository does not contain the 8,406 full-text PDFs. See
+because the repository does not contain the 7,751 full-text PDFs. See
 `manifest.json` for counts, hashes, extractor version, and source provenance.
 
 Regenerate from the repository root:
 
 ```bash
-paper-fetcher-validity --expected-count 8406
+paper-fetcher-validity --expected-count 7751
 ```

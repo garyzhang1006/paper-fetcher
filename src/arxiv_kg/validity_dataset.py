@@ -40,13 +40,13 @@ Confidence measures how many supported detail types were extracted. It is not a
 calibrated probability and does not estimate whether the scientific claim is true.
 
 These records do not claim table, figure, page, seed, or compute-budget evidence
-because the repository does not contain the 8,406 full-text PDFs. See
+because the repository does not contain the 7,751 full-text PDFs. See
 `manifest.json` for counts, hashes, extractor version, and source provenance.
 
 Regenerate from the repository root:
 
 ```bash
-paper-fetcher-validity --expected-count 8406
+paper-fetcher-validity --expected-count 7751
 ```
 """
 
@@ -89,7 +89,7 @@ def write_validity_dataset(
     source_path: str | Path,
     output_dir: str | Path,
     *,
-    expected_count: int = 8406,
+    expected_count: int = 7751,
 ) -> dict[str, object]:
     """Write date-sharded records, replacing prior output only after validation."""
 
@@ -226,7 +226,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=Path("dataset/validity_envelopes"),
     )
-    parser.add_argument("--expected-count", type=int, default=8406)
+    parser.add_argument("--expected-count", type=int, default=7751)
     return parser.parse_args(argv)
 
 
