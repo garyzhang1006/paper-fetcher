@@ -1,9 +1,6 @@
 name: Daily arXiv fetch
 
 on:
-  schedule:
-    - cron: "17 6 * * *"
-      timezone: "America/Chicago"
   workflow_dispatch:
 
 permissions:
