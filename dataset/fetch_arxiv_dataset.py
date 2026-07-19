@@ -34,6 +34,7 @@ USER_AGENT = "codex-dataset-builder/1.0 (local arxiv dataset export)"
 API_URL = "https://export.arxiv.org/api/query"
 TARGET_PAPER_COUNT = 9000
 LOW_QUALITY_MARKERS = re.compile(r"\b(withdrawn|retracted)\b", re.IGNORECASE)
+EXCLUDED_PRIMARY_CATEGORY_PREFIXES = ("astro-ph.",)
 
 
 @dataclass(frozen=True)
@@ -240,6 +241,17 @@ def curate_papers(
     ]
 
 
+def exclude_primary_categories(papers: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Remove categories excluded from the final curated dataset."""
+    return [
+        paper
+        for paper in papers
+        if not str(paper.get("primary_category") or "").startswith(
+            EXCLUDED_PRIMARY_CATEGORY_PREFIXES
+        )
+    ]
+
+
 def daily_counts(papers: list[dict[str, object]]) -> list[dict[str, object]]:
     counts = Counter(str(paper["submitted_date"]) for paper in papers)
     return [
@@ -283,10 +295,13 @@ def write_outputs(
                 "query_template": "submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]",
                 "sort": {"sortBy": "submittedDate", "sortOrder": "ascending"},
                 "curation": {
-                    "method": "metadata-quality ranking with proportional primary-category quotas",
+                    "method": "metadata-quality ranking with proportional primary-category quotas, followed by Astrophysics exclusion",
                     "target_paper_count": TARGET_PAPER_COUNT,
+                    "post_curation_paper_count": len(papers),
                     "removed_paper_count": source_paper_count - len(papers),
-                    "preserves_every_primary_category": True,
+                    "preserves_every_primary_category": False,
+                    "excluded_primary_category_group": "Astrophysics",
+                    "excluded_primary_category_prefix": "astro-ph.",
                 },
                 "source_paper_count": source_paper_count,
                 "paper_count": len(papers),
@@ -310,7 +325,7 @@ def main() -> int:
         print(f"{day.isoformat()} {total}")
 
     source_paper_count = len(papers)
-    papers = curate_papers(papers)
+    papers = exclude_primary_categories(curate_papers(papers))
     write_outputs(
         Path(__file__).resolve().parent,
         daily_counts(papers),

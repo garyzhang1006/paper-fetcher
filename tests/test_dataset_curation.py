@@ -44,3 +44,15 @@ def test_withdrawn_paper_ranks_below_otherwise_weaker_paper():
     active = paper("active", "cs.LG", 20)
 
     assert fetcher.curate_papers([withdrawn, active], target=1) == [active]
+
+
+def test_astrophysics_categories_are_excluded_after_curation():
+    fetcher = load_dataset_fetcher()
+    papers = [
+        paper("astro", "astro-ph.GA", 30),
+        paper("machine-learning", "cs.LG", 30),
+    ]
+
+    retained = fetcher.exclude_primary_categories(papers)
+
+    assert retained == [papers[1]]

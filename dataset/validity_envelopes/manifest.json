@@ -1,79 +1,79 @@
 {
   "extractor": "abstract-validity-rules",
   "extractor_version": "1.0",
-  "paper_with_envelopes_count": 3955,
-  "paper_without_supported_claim_count": 5045,
-  "processed_paper_count": 9000,
+  "paper_with_envelopes_count": 3648,
+  "paper_without_supported_claim_count": 4758,
+  "processed_paper_count": 8406,
   "schema_version": 1,
   "shards": [
     {
       "file": "2026-07-03.jsonl",
-      "paper_count": 689,
-      "sha256": "ec97c51a92660df61fef05b9ce5749b50f7f721b0fc2c67dd0f20a1e2a5b0a25"
+      "paper_count": 638,
+      "sha256": "a5b61d57b7ca35bc0b8b834a460aa0658561714b0459182be99911a83b470589"
     },
     {
       "file": "2026-07-04.jsonl",
-      "paper_count": 354,
-      "sha256": "4100455821e0857de6ddf37ed2ab84119098bd2b5f40f040e4126be3e194f479"
+      "paper_count": 338,
+      "sha256": "8a7de00db662facb31636b343c446e10a41254335b5d9fb97ac2f938e85b413e"
     },
     {
       "file": "2026-07-05.jsonl",
-      "paper_count": 424,
-      "sha256": "3a58365a49f2073917599ba43f08eda616389248d0c6822725efc42fa2253a65"
+      "paper_count": 410,
+      "sha256": "d514a86ebcd28063f0e7147144936e9c698304fa86bdbe5475bd3cdf5b713f32"
     },
     {
       "file": "2026-07-06.jsonl",
-      "paper_count": 890,
-      "sha256": "848d14457a5b43ba2dccd81346d990950b5f0866d614f389e88a844c3152ab0b"
+      "paper_count": 830,
+      "sha256": "73737915d869c4e2961cd4776c6e42432378c358b877c9d099b80efe7eba1724"
     },
     {
       "file": "2026-07-07.jsonl",
-      "paper_count": 946,
-      "sha256": "c348544f25be04c3a07104a236bf577a880cebf2b0bbfbf763cec1b9e25694bb"
+      "paper_count": 889,
+      "sha256": "d826a2129ceebb69dcade138526134c7767bd2ccf8d4f5d6a5b4ed5de90be7c2"
     },
     {
       "file": "2026-07-08.jsonl",
-      "paper_count": 893,
-      "sha256": "2aa64d5d92d803e8a4f4362d0b85eefc3d161d00567061b434fe16f5518e062e"
+      "paper_count": 836,
+      "sha256": "b9e47a3e4850eea897bb43b6feab18ce762d2583c2a4110d6795a881814e6b8f"
     },
     {
       "file": "2026-07-09.jsonl",
-      "paper_count": 812,
-      "sha256": "a885f3072d2c492d4a8afa74d12088edc472ab74bd60d0493e9846c0d0f8c6d8"
+      "paper_count": 746,
+      "sha256": "18495e9676f3e567965dcd22e37947ade65d2bcf3367bd8ce85e54323ac99eda"
     },
     {
       "file": "2026-07-10.jsonl",
-      "paper_count": 749,
-      "sha256": "9efd7e371017047904f5cba014bc286172395fbc5f62c05062caf7d9de3dde20"
+      "paper_count": 701,
+      "sha256": "8c306374ded6066ad7ef6fe3c6a19b035b31c15d6c47b88d7c2300997432f91d"
     },
     {
       "file": "2026-07-11.jsonl",
-      "paper_count": 390,
-      "sha256": "7cc47606761033265df8880cc83bda3cc7b99f59fea3ccd7bb343a16c3abc4fa"
+      "paper_count": 369,
+      "sha256": "cbd1ba0325a397bf0bb844688a88aad4a63d6d6791ed31c014069e06a42d432b"
     },
     {
       "file": "2026-07-12.jsonl",
-      "paper_count": 378,
-      "sha256": "0913540ff0cd01c725344b0b57a5e7e9dc1ed391d5205b3b5ed089a5113fcced"
+      "paper_count": 363,
+      "sha256": "b4e04a995f70f3348afc974a9a1d9ccb343586f33d3002b6dde9ae5906212a41"
     },
     {
       "file": "2026-07-13.jsonl",
-      "paper_count": 980,
-      "sha256": "f381afbc2490018aa153de5396083cb1b910e463a99106a905c240c12cc0664c"
+      "paper_count": 905,
+      "sha256": "8c459e25f2209c97f043ecab1fe7d2cda797886c2661b6c348d8b43d1645532e"
     },
     {
       "file": "2026-07-14.jsonl",
-      "paper_count": 875,
-      "sha256": "a88a8f08764313adae6a02203c77e45f015f7a5ab8cc823f786d1451e3c0e70a"
+      "paper_count": 798,
+      "sha256": "4c361dea6f34d74e1d5d61eff37925448df3657c6ab138ae93b43fe83d5405cc"
     },
     {
       "file": "2026-07-15.jsonl",
-      "paper_count": 620,
-      "sha256": "09d3f0f6c4e3b56efa636ee9b59127a7300e7df9d5bd07518014bc7750bba930"
+      "paper_count": 583,
+      "sha256": "8965a9a0cd2bf4a1b6eb0719917256f998b74815235709d5c876f1b127ee02f6"
     }
   ],
   "source_file": "papers.jsonl",
   "source_scope": "abstract",
-  "source_sha256": "b5069e0e7514663a984e5ddd7f3e99ed94b44a7dbbec8cdef95aa5052cd68ff7",
-  "validity_envelope_count": 4937
+  "source_sha256": "e5960054a5509302534c89c582bfe0aa4538f10c411b43d102d9d3b4fab24954",
+  "validity_envelope_count": 4515
 }
