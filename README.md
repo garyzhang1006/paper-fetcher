@@ -125,9 +125,15 @@ Train a CPU neural network that predicts each paper's `primary_category` from
 its title and abstract:
 
 ```bash
+python3.13 -m venv .venv-ml
+source .venv-ml/bin/activate
 python -m pip install '.[ml]'
 paper-fetcher-classify
 ```
+
+Python 3.13 is the tested ML runtime used by repository CI. On the current Mac,
+Python 3.14.5 with PyTorch 2.13 imports unusually slowly, so keep classifier
+work in the separate `.venv-ml` environment.
 
 The classifier follows the attached PyTorch classification tutorial's full
 workflow. It fits word and character TF-IDF features on training papers only,
