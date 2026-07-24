@@ -56,11 +56,11 @@ The command exits nonzero if an API page fails or either query exceeds its cap.
 Rows saved before failure are safe because upserts are idempotent, while atomic
 checkpoints remain at the last complete run.
 
-## Daily GitHub Actions update
+## Manual GitHub Actions update
 
-`.github/workflows/daily-arxiv-fetch.yml` runs every day at 06:17 in the
-`America/Chicago` IANA timezone and also supports manual runs. It installs the
-package, runs the full offline test suite, performs one bounded fetch, then
+Scheduled fetching is disabled. `.github/workflows/daily-arxiv-fetch.yml` runs
+only when manually started with GitHub Actions `workflow_dispatch`. It installs
+the package, runs the full offline test suite, performs one bounded fetch, then
 commits `data/arxiv_kg.sqlite3` only after success. Repository Actions settings
 must allow `GITHUB_TOKEN` write access for the final push.
 
@@ -132,10 +132,13 @@ paper-fetcher-classify
 The classifier follows the attached PyTorch classification tutorial's full
 workflow. It fits word and character TF-IDF features on training papers only,
 uses weighted cross-entropy on raw logits, chooses the best epoch using a
-validation set, and evaluates the test set once. Fixed seeds make the split and
-training order reproducible. Categories with fewer than five examples are
-excluded because they cannot support meaningful train, validation, and test
-subsets.
+validation set, and evaluates the test set once. Fixed seeds make CPU split and
+training order reproducible; accelerator kernels can still vary. Categories
+with fewer than five examples are excluded by default because they cannot
+support meaningful train, validation, and test subsets.
+
+See [`classification/PSEUDOCODE.md`](classification/PSEUDOCODE.md) for the
+complete data, training, evaluation, artifact, and prediction flow.
 
 Outputs are written to `data/category_classifier/`:
 

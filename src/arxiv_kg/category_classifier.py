@@ -6,8 +6,11 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import pickle
 import random
+import shutil
+import tempfile
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -118,6 +121,7 @@ def load_paper_examples(
         raise FileNotFoundError(f"paper dataset not found: {dataset_path}")
 
     records: list[PaperExample] = []
+    arxiv_id_lines: dict[str, int] = {}
     with dataset_path.open(encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
@@ -134,6 +138,12 @@ def load_paper_examples(
             abstract = _required_text(record, "abstract", line_number)
             label = _required_text(record, "primary_category", line_number)
             arxiv_id = str(record.get("arxiv_id") or f"line-{line_number}")
+            if arxiv_id in arxiv_id_lines:
+                raise ValueError(
+                    f"line {line_number}: duplicate arxiv_id {arxiv_id!r}; "
+                    f"first seen on line {arxiv_id_lines[arxiv_id]}"
+                )
+            arxiv_id_lines[arxiv_id] = line_number
             records.append(
                 PaperExample(
                     arxiv_id=arxiv_id,
@@ -213,12 +223,19 @@ def stratified_three_way_split(
     )
 
 
-def build_text_vectorizer(max_features: int) -> FeatureUnion:
+def build_text_vectorizer(
+    max_features: int,
+    training_document_count: int,
+) -> FeatureUnion:
     """Combine word semantics with character patterns common in technical terms."""
     if max_features < 100:
         raise ValueError("max_features must be at least 100")
+    if training_document_count < 2:
+        raise ValueError("at least two training papers are required")
     word_features = int(max_features * 0.75)
     character_features = max_features - word_features
+    minimum_document_frequency = 1 if training_document_count < 4 else 2
+    maximum_document_frequency = 1.0 if training_document_count < 3 else 0.995
     return FeatureUnion(
         [
             (
@@ -227,8 +244,8 @@ def build_text_vectorizer(max_features: int) -> FeatureUnion:
                     stop_words="english",
                     max_features=word_features,
                     ngram_range=(1, 2),
-                    min_df=2,
-                    max_df=0.995,
+                    min_df=minimum_document_frequency,
+                    max_df=maximum_document_frequency,
                     sublinear_tf=True,
                     strip_accents="unicode",
                     dtype=np.float32,
@@ -240,7 +257,7 @@ def build_text_vectorizer(max_features: int) -> FeatureUnion:
                     analyzer="char_wb",
                     max_features=character_features,
                     ngram_range=(3, 5),
-                    min_df=2,
+                    min_df=minimum_document_frequency,
                     sublinear_tf=True,
                     dtype=np.float32,
                 ),
@@ -487,7 +504,7 @@ def train_and_evaluate(
     train_examples = [examples[index] for index in train_indices]
     validation_examples = [examples[index] for index in validation_indices]
     test_examples = [examples[index] for index in test_indices]
-    vectorizer = build_text_vectorizer(max_features)
+    vectorizer = build_text_vectorizer(max_features, len(train_examples))
     train_features = _as_tensor(
         vectorizer.fit_transform([example.text for example in train_examples])
     )
@@ -703,11 +720,15 @@ def _plot_history(history: list[dict[str, float | int]], destination: Path) -> N
 
     epochs = [int(item["epoch"]) for item in history]
     figure, (loss_axis, accuracy_axis) = plt.subplots(1, 2, figsize=(11, 4))
-    loss_axis.plot(epochs, [item["train_loss"] for item in history], label="train")
+    loss_axis.plot(
+        epochs,
+        [item["train_loss"] for item in history],
+        label="train (class-weighted)",
+    )
     loss_axis.plot(
         epochs,
         [item["validation_loss"] for item in history],
-        label="validation",
+        label="validation (unweighted)",
     )
     loss_axis.set(title="Loss by epoch", xlabel="Epoch", ylabel="Cross-entropy")
     loss_axis.legend()
@@ -741,25 +762,28 @@ def _plot_history(history: list[dict[str, float | int]], destination: Path) -> N
     plt.close(figure)
 
 
-def save_run(run: ClassificationRun, output_dir: Path) -> None:
-    """Persist model, preprocessing, labels, metrics, curves, and error analysis."""
+def _write_run_artifacts(run: ClassificationRun, output_dir: Path) -> None:
+    """Write one complete artifact set into a new staging directory."""
     output_dir.mkdir(parents=True, exist_ok=True)
+    vectorizer_bytes = pickle.dumps(run.vectorizer)
+    labels_bytes = (
+        json.dumps(run.encoder.classes_.tolist(), indent=2) + "\n"
+    ).encode("utf-8")
     torch.save(
         {
+            "artifact_version": 1,
             "state_dict": run.model.state_dict(),
             "input_size": run.model.layers[0].in_features,
             "hidden_neurons": run.model.layers[0].out_features,
             "category_count": len(run.encoder.classes_),
             "configuration": run.configuration,
+            "labels_sha256": hashlib.sha256(labels_bytes).hexdigest(),
+            "vectorizer_sha256": hashlib.sha256(vectorizer_bytes).hexdigest(),
         },
         output_dir / "model.pt",
     )
-    with (output_dir / "vectorizer.pkl").open("wb") as handle:
-        pickle.dump(run.vectorizer, handle)
-    (output_dir / "labels.json").write_text(
-        json.dumps(run.encoder.classes_.tolist(), indent=2) + "\n",
-        encoding="utf-8",
-    )
+    (output_dir / "vectorizer.pkl").write_bytes(vectorizer_bytes)
+    (output_dir / "labels.json").write_bytes(labels_bytes)
     report = {
         "metrics": asdict(run.metrics),
         "configuration": run.configuration,
@@ -782,6 +806,48 @@ def save_run(run: ClassificationRun, output_dir: Path) -> None:
     _plot_history(run.history, output_dir / "learning_curves.png")
 
 
+def save_run(run: ClassificationRun, output_dir: Path) -> None:
+    """Stage a complete run, then replace the prior artifact directory."""
+    output_parent = output_dir.parent
+    output_parent.mkdir(parents=True, exist_ok=True)
+    if output_dir.exists() and not output_dir.is_dir():
+        raise NotADirectoryError(
+            f"classifier output path is not a directory: {output_dir}"
+        )
+
+    staging_dir = Path(
+        tempfile.mkdtemp(prefix=f".{output_dir.name}-staging-", dir=output_parent)
+    )
+    backup_dir: Path | None = None
+    try:
+        _write_run_artifacts(run, staging_dir)
+        if output_dir.exists():
+            backup_dir = Path(
+                tempfile.mkdtemp(
+                    prefix=f".{output_dir.name}-backup-",
+                    dir=output_parent,
+                )
+            )
+            backup_dir.rmdir()
+            os.replace(output_dir, backup_dir)
+        os.replace(staging_dir, output_dir)
+        if backup_dir is not None:
+            shutil.rmtree(backup_dir, ignore_errors=True)
+    except Exception:
+        if (
+            backup_dir is not None
+            and backup_dir.exists()
+            and not output_dir.exists()
+        ):
+            os.replace(backup_dir, output_dir)
+        raise
+    finally:
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        if backup_dir is not None and backup_dir.exists() and output_dir.exists():
+            shutil.rmtree(backup_dir, ignore_errors=True)
+
+
 def load_classifier(
     model_dir: Path,
 ) -> tuple[CategoryNetwork, FeatureUnion, np.ndarray]:
@@ -798,6 +864,21 @@ def load_classifier(
         map_location="cpu",
         weights_only=True,
     )
+    labels_bytes = (model_dir / "labels.json").read_bytes()
+    vectorizer_bytes = (model_dir / "vectorizer.pkl").read_bytes()
+    artifact_version = checkpoint.get("artifact_version")
+    if artifact_version not in (None, 1):
+        raise ValueError(
+            f"unsupported classifier artifact version: {artifact_version!r}"
+        )
+    if artifact_version == 1:
+        if hashlib.sha256(labels_bytes).hexdigest() != checkpoint["labels_sha256"]:
+            raise ValueError("labels.json does not match model.pt")
+        if (
+            hashlib.sha256(vectorizer_bytes).hexdigest()
+            != checkpoint["vectorizer_sha256"]
+        ):
+            raise ValueError("vectorizer.pkl does not match model.pt")
     configuration = checkpoint["configuration"]
     model = CategoryNetwork(
         int(checkpoint["input_size"]),
@@ -807,10 +888,9 @@ def load_classifier(
     )
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
-    with (model_dir / "vectorizer.pkl").open("rb") as handle:
-        vectorizer = pickle.load(handle)
+    vectorizer = pickle.loads(vectorizer_bytes)
     labels = np.asarray(
-        json.loads((model_dir / "labels.json").read_text(encoding="utf-8")),
+        json.loads(labels_bytes),
         dtype=object,
     )
     if len(labels) != int(checkpoint["category_count"]):
