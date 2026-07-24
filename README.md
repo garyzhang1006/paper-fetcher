@@ -118,3 +118,44 @@ uses abstracts only, so unavailable table, page, seed, and compute-budget fields
 remain empty rather than being guessed. Boundary statements are labeled
 paper-level unless the abstract explicitly ties them to a claim. Absolute
 reported values stay separate from comparative effect sizes.
+
+## Primary-category classifier
+
+Train a CPU neural network that predicts each paper's `primary_category` from
+its title and abstract:
+
+```bash
+python -m pip install '.[ml]'
+paper-fetcher-classify
+```
+
+The classifier follows the attached PyTorch classification tutorial's full
+workflow. It fits word and character TF-IDF features on training papers only,
+uses weighted cross-entropy on raw logits, chooses the best epoch using a
+validation set, and evaluates the test set once. Fixed seeds make the split and
+training order reproducible. Categories with fewer than five examples are
+excluded because they cannot support meaningful train, validation, and test
+subsets.
+
+Outputs are written to `data/category_classifier/`:
+
+- `metrics.json`: loss, accuracy, macro-F1, weighted F1, top-3 accuracy,
+  calibration error, per-category metrics, confidence-filtered accuracy,
+  confusion pairs, and high-confidence mistakes;
+- `learning_curves.png`: training and validation curves;
+- `model.pt`: best validation-selected PyTorch weights;
+- `vectorizer.pkl`: fitted text feature pipeline; and
+- `labels.json`: output-index to arXiv-category mapping.
+
+Classify a new paper with saved artifacts:
+
+```bash
+paper-fetcher-predict \
+  --title "Paper title" \
+  --abstract "Paper abstract"
+```
+
+Only load `model.pt` and `vectorizer.pkl` artifacts produced by a trusted run.
+Confidence is model output, not certainty. Test scores estimate performance on
+papers similar to this dataset; they do not prove perfect classification on new
+domains or missing categories.

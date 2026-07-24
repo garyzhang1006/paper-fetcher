@@ -20,10 +20,16 @@ dependencies = [
 paper-fetcher = "arxiv_kg.web:main"
 paper-fetcher-daily = "arxiv_kg.daily:main"
 paper-fetcher-validity = "arxiv_kg.validity_dataset:main"
+paper-fetcher-classify = "arxiv_kg.category_classifier:main"
+paper-fetcher-predict = "arxiv_kg.category_classifier:predict_main"
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
 llm = ["openai>=2,<3"]
+ml = [
+  "matplotlib>=3.9,<4",
+  "torch>=2.13,<3",
+]
 notebooks = [
   "ipykernel>=6,<8",
   "jupyterlab>=4,<5",
