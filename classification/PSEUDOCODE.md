@@ -35,9 +35,9 @@ CALCULATE class weights from training labels only
 FOR each epoch:
     SET model to training mode
     FOR each shuffled training batch:
+        CLEAR old gradients
         logits = model(features)
         loss = weighted_cross_entropy(logits, correct_categories)
-        CLEAR old gradients
         BACKPROPAGATE loss
         UPDATE weights with AdamW
 
@@ -58,8 +58,9 @@ RECORD confidence-filtered accuracy, confusion pairs, and mistakes
 ```
 
 The network returns raw logits during training. Cross-entropy applies the
-required internal normalization. Softmax is used later only to display
-probabilities and confidence.
+required internal normalization. Softmax is used after training loss
+calculation for evaluation metrics, confidence analysis, and inference. It is
+never applied before cross-entropy.
 
 ## Save artifacts
 
@@ -82,7 +83,12 @@ previous complete run.
 
 ```text
 LOAD model, TF-IDF vectorizer, and category labels
-VERIFY vectorizer and label hashes match model checkpoint
+IF artifact version is 1:
+    VERIFY vectorizer and label hashes match model checkpoint
+ELSE IF artifact version is unknown:
+    REJECT artifact
+ELSE:
+    LOAD legacy artifact and verify category count
 COMBINE new title and abstract
 TRANSFORM text using training-fitted TF-IDF
 COMPUTE raw neural-network logits
