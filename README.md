@@ -138,13 +138,20 @@ work in the separate `.venv-ml` environment.
 The classifier follows the attached PyTorch classification tutorial's full
 workflow. It fits word and character TF-IDF features on training papers only,
 uses weighted cross-entropy on raw logits, chooses the best epoch using a
-validation set, and evaluates the test set once. Fixed seeds make CPU split and
+validation set, and computes current-run test metrics after checkpoint
+selection. Earlier development viewed results from the same test partition, so
+it is not untouched across project history. Fixed seeds make CPU split and
 training order reproducible; accelerator kernels can still vary. Categories
 with fewer than five examples are excluded by default because they cannot
 support meaningful train, validation, and test subsets.
 
 See [`classification/PSEUDOCODE.md`](classification/PSEUDOCODE.md) for the
-complete data, training, evaluation, artifact, and prediction flow.
+complete data, training, evaluation, artifact, and prediction flow. Current
+results and error analysis are in the
+[`classification benchmark`](classification/BENCHMARK.md), the
+[`four-page report`](output/pdf/arxiv-classification-progress-report.pdf), and
+the
+[`executed evidence notebook`](output/jupyter-notebook/arxiv-category-classifier-report.executed.ipynb).
 
 Outputs are written to `data/category_classifier/`:
 

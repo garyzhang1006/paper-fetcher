@@ -52,7 +52,7 @@ FOR each epoch:
         STOP training
 
 RESTORE best validation-selected checkpoint
-EVALUATE untouched test papers once
+EVALUATE test papers after checkpoint selection
 CALCULATE accuracy, macro-F1, weighted-F1, top-3 accuracy, and calibration
 RECORD confidence-filtered accuracy, confusion pairs, and mistakes
 ```

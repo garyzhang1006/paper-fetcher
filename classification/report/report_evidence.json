@@ -1,0 +1,320 @@
+{
+  "any_listed_top_one_accuracy": 0.7095937770095073,
+  "any_listed_top_three_accuracy": 0.898876404494382,
+  "categories_with_four_or_fewer_test_papers": 61,
+  "class_counts": {
+    "cs.AI": 352,
+    "cs.AR": 40,
+    "cs.CC": 22,
+    "cs.CE": 37,
+    "cs.CG": 20,
+    "cs.CL": 327,
+    "cs.CR": 205,
+    "cs.CV": 779,
+    "cs.CY": 56,
+    "cs.DB": 29,
+    "cs.DC": 65,
+    "cs.DL": 14,
+    "cs.DM": 12,
+    "cs.DS": 93,
+    "cs.ET": 11,
+    "cs.FL": 6,
+    "cs.GR": 16,
+    "cs.GT": 34,
+    "cs.HC": 83,
+    "cs.IR": 67,
+    "cs.IT": 76,
+    "cs.LG": 681,
+    "cs.LO": 37,
+    "cs.MA": 23,
+    "cs.MM": 6,
+    "cs.MS": 5,
+    "cs.NE": 23,
+    "cs.NI": 31,
+    "cs.PF": 7,
+    "cs.PL": 25,
+    "cs.RO": 335,
+    "cs.SC": 5,
+    "cs.SD": 64,
+    "cs.SE": 203,
+    "cs.SI": 16,
+    "eess.AS": 49,
+    "eess.IV": 47,
+    "eess.SP": 121,
+    "eess.SY": 132,
+    "gr-qc": 144,
+    "hep-ex": 31,
+    "hep-lat": 14,
+    "hep-ph": 178,
+    "hep-th": 157,
+    "math-ph": 40,
+    "math.AC": 29,
+    "math.AG": 84,
+    "math.AP": 182,
+    "math.AT": 17,
+    "math.CA": 28,
+    "math.CO": 232,
+    "math.CT": 14,
+    "math.CV": 29,
+    "math.DG": 69,
+    "math.DS": 74,
+    "math.FA": 67,
+    "math.GM": 13,
+    "math.GN": 7,
+    "math.GR": 32,
+    "math.GT": 42,
+    "math.HO": 7,
+    "math.LO": 21,
+    "math.MG": 16,
+    "math.NA": 142,
+    "math.NT": 124,
+    "math.OA": 13,
+    "math.OC": 143,
+    "math.PR": 90,
+    "math.QA": 17,
+    "math.RA": 20,
+    "math.RT": 39,
+    "math.SG": 15,
+    "math.SP": 7,
+    "math.ST": 57,
+    "nlin.AO": 8,
+    "nlin.CD": 7,
+    "nlin.PS": 6,
+    "nlin.SI": 7,
+    "nucl-ex": 15,
+    "nucl-th": 54,
+    "physics.acc-ph": 11,
+    "physics.ao-ph": 14,
+    "physics.app-ph": 17,
+    "physics.atom-ph": 25,
+    "physics.bio-ph": 18,
+    "physics.chem-ph": 48,
+    "physics.class-ph": 8,
+    "physics.comp-ph": 25,
+    "physics.ed-ph": 8,
+    "physics.flu-dyn": 71,
+    "physics.geo-ph": 11,
+    "physics.hist-ph": 5,
+    "physics.ins-det": 22,
+    "physics.med-ph": 16,
+    "physics.optics": 119,
+    "physics.plasm-ph": 47,
+    "physics.soc-ph": 32,
+    "q-bio.BM": 5,
+    "q-bio.NC": 18,
+    "q-bio.PE": 12,
+    "q-bio.QM": 16,
+    "q-fin.CP": 6,
+    "q-fin.GN": 5,
+    "q-fin.MF": 7,
+    "q-fin.PM": 5,
+    "q-fin.ST": 5,
+    "q-fin.TR": 9,
+    "quant-ph": 468,
+    "stat.AP": 27,
+    "stat.CO": 8,
+    "stat.ME": 114,
+    "stat.ML": 61
+  },
+  "configuration": {
+    "batch_size": 128,
+    "class_weighting": "square-root inverse training frequency",
+    "dataset_sha256": "1bfe64d02fffedaaa65ef00866e47e8c688966062ba54572c404a08c4657c78a",
+    "device": "cpu",
+    "dropout": 0.25,
+    "early_stopping_patience": 4,
+    "features": "title and abstract word plus character TF-IDF",
+    "hidden_neurons": 384,
+    "label": "primary_category",
+    "learning_rate": 0.001,
+    "max_features": 8000,
+    "maximum_epochs": 20,
+    "minimum_class_count": 5,
+    "seed": 42,
+    "test_fraction": 0.15,
+    "validation_fraction": 0.15,
+    "weight_decay": 0.0001
+  },
+  "correct_example": {
+    "arxiv_id": "2607.09583",
+    "confidence": 0.9994596838951111,
+    "predicted_category": "cs.CV",
+    "title": "Promptable Concept Segmentation from Above: Evaluating SAM 3's Zero-Shot and One-Shot Capabilities in Remote Sensing",
+    "true_category": "cs.CV"
+  },
+  "dataset": {
+    "dataset_sha256": "1bfe64d02fffedaaa65ef00866e47e8c688966062ba54572c404a08c4657c78a",
+    "date_end": "2026-07-15",
+    "date_start": "2026-07-03",
+    "duplicate_ids": 0,
+    "eligible_categories": 112,
+    "eligible_papers": 7708,
+    "excluded_rare_papers": 43,
+    "raw_categories": 129,
+    "retained_records": 7751,
+    "source_records": 11070
+  },
+  "error_examples": [
+    {
+      "arxiv_id": "2607.07372",
+      "confidence": 0.9953280687332153,
+      "listed_categories": [
+        "cs.AR",
+        "quant-ph"
+      ],
+      "predicted_category": "quant-ph",
+      "title": "Vectorizing Quantum Control: A RISC-V Vector Extension Architecture for Scalable Qubit Systems",
+      "top_predictions": [
+        {
+          "category": "quant-ph",
+          "probability": 0.9953280687332153
+        },
+        {
+          "category": "cs.ET",
+          "probability": 0.0008633085526525974
+        },
+        {
+          "category": "cs.AR",
+          "probability": 0.0006987236556597054
+        }
+      ],
+      "true_category": "cs.AR"
+    },
+    {
+      "arxiv_id": "2607.03072",
+      "confidence": 0.986603856086731,
+      "listed_categories": [
+        "cs.MA",
+        "cs.RO"
+      ],
+      "predicted_category": "cs.RO",
+      "title": "LOTUSim: Multi-Domain Simulator for Marine Robotics",
+      "top_predictions": [
+        {
+          "category": "cs.RO",
+          "probability": 0.986603856086731
+        },
+        {
+          "category": "cs.AI",
+          "probability": 0.0028488831594586372
+        },
+        {
+          "category": "cs.CV",
+          "probability": 0.0023742527700960636
+        }
+      ],
+      "true_category": "cs.MA"
+    }
+  ],
+  "excluded_class_counts": {
+    "cs.GL": 1,
+    "cs.OS": 4,
+    "math.KT": 3,
+    "nlin.CG": 1,
+    "physics.data-an": 4,
+    "physics.gen-ph": 4,
+    "physics.pop-ph": 2,
+    "physics.space-ph": 4,
+    "q-bio.CB": 2,
+    "q-bio.GN": 2,
+    "q-bio.MN": 2,
+    "q-bio.OT": 3,
+    "q-bio.SC": 1,
+    "q-bio.TO": 1,
+    "q-fin.PR": 4,
+    "q-fin.RM": 4,
+    "stat.OT": 1
+  },
+  "high_confidence_mistakes_matching_secondary_category": 12,
+  "high_confidence_mistakes_screened": 25,
+  "majority_macro_f1": 0.0016399416909620992,
+  "median_test_support": 4.0,
+  "saved_training_artifact_metrics": {
+    "accuracy": 0.6136560069144339,
+    "best_epoch": 18,
+    "categories": 112,
+    "correct_papers": 710,
+    "excluded_papers": 43,
+    "expected_calibration_error": 0.048320604026214554,
+    "macro_f1": 0.3464990153000574,
+    "majority_test_accuracy": 0.10112359550561797,
+    "test_loss": 1.3370113732388231,
+    "test_papers": 1157,
+    "top_3_accuracy": 0.8461538461538461,
+    "training_papers": 5394,
+    "uniform_random_expected_accuracy": 0.008928571428571428,
+    "untrained_validation_accuracy": 0.003457216940363008,
+    "validation_papers": 1157,
+    "weighted_f1": 0.5915351808466827
+  },
+  "split": {
+    "seed": 42,
+    "test": 1157,
+    "train": 5394,
+    "validation": 1157
+  },
+  "strict_errors": 447,
+  "strict_errors_matching_secondary_category": 111,
+  "strict_primary_metrics": {
+    "accuracy": 0.6136560069144339,
+    "correct_papers": 710,
+    "macro_f1": 0.3464990153000574,
+    "test_papers": 1157,
+    "top_3_accuracy": 0.8461538461538461,
+    "weighted_f1": 0.5915351808466827
+  },
+  "top_confusions": [
+    {
+      "papers": 12,
+      "predicted_category": "cs.AI",
+      "true_category": "cs.CL"
+    },
+    {
+      "papers": 11,
+      "predicted_category": "cs.LG",
+      "true_category": "cs.CV"
+    },
+    {
+      "papers": 10,
+      "predicted_category": "cs.AI",
+      "true_category": "cs.LG"
+    },
+    {
+      "papers": 7,
+      "predicted_category": "cs.CV",
+      "true_category": "cs.AI"
+    },
+    {
+      "papers": 7,
+      "predicted_category": "cs.CV",
+      "true_category": "cs.CL"
+    },
+    {
+      "papers": 7,
+      "predicted_category": "cs.CV",
+      "true_category": "cs.LG"
+    },
+    {
+      "papers": 6,
+      "predicted_category": "cs.CL",
+      "true_category": "cs.AI"
+    },
+    {
+      "papers": 6,
+      "predicted_category": "cs.LG",
+      "true_category": "cs.CL"
+    },
+    {
+      "papers": 6,
+      "predicted_category": "cs.CV",
+      "true_category": "eess.IV"
+    },
+    {
+      "papers": 5,
+      "predicted_category": "cs.AI",
+      "true_category": "cs.SE"
+    }
+  ],
+  "training_history_source": "saved metrics.json from the July 30 training run",
+  "zero_f1_categories": 40
+}

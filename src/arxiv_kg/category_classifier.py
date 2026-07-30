@@ -42,7 +42,7 @@ class PaperExample:
 
 @dataclass(frozen=True)
 class ClassificationMetrics:
-    """Final metrics calculated once from untouched test papers."""
+    """Final metrics calculated after validation checkpoint selection."""
 
     test_loss: float
     accuracy: float

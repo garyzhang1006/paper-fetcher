@@ -8,8 +8,12 @@ This classifier applies the workflow from `classification.pdf` and
 - training, validation, and test partitions stay separate;
 - the neural network returns raw logits for cross-entropy loss;
 - validation macro-F1 selects the checkpoint;
-- the untouched test partition measures final quality;
+- the test partition measures quality after current-run checkpoint selection;
 - softmax probabilities appear only in prediction and confidence reports.
+
+Earlier development viewed results from this test partition. Current-run
+settings use validation only, but this benchmark is not a never-viewed test
+estimate across project history.
 
 ## Reproduction
 
@@ -22,7 +26,7 @@ paper-fetcher-classify \
   --device cpu
 ```
 
-Run date: July 23, 2026
+Run date: July 30, 2026
 
 Dataset SHA-256:
 `1bfe64d02fffedaaa65ef00866e47e8c688966062ba54572c404a08c4657c78a`
@@ -46,7 +50,13 @@ dropout, batch size 128, and square-root inverse-frequency class weights.
 | Test top-3 accuracy | 84.62% |
 | Expected calibration error | 4.83% |
 | Majority-class test baseline | 10.11% |
+| Majority-class macro-F1 | 0.16% |
 | Uniform-random expected accuracy | 0.89% |
+
+A post-hoc cross-list audit left model predictions unchanged and counted a
+prediction as correct when it matched any author-listed category. Top-1
+accuracy then reached 70.96%, and 111 of 447 strict errors matched a listed
+secondary category. Strict primary-category accuracy remains 61.37%.
 
 Accuracy rises when the classifier abstains on uncertain examples:
 
@@ -59,3 +69,11 @@ Accuracy rises when the classifier abstains on uncertain examples:
 These numbers measure this exact dataset snapshot. They do not guarantee
 performance on future papers, unseen categories, or shifted subject areas.
 Confidence is a model score, not certainty.
+
+Report artifacts:
+
+- [Four-page PDF](../output/pdf/arxiv-classification-progress-report.pdf)
+- [LaTeX source](report/arxiv_classification_progress_report.tex)
+- [Evidence JSON](report/report_evidence.json)
+- [All eligible class counts](report/class_counts.csv)
+- [Executed evidence notebook](../output/jupyter-notebook/arxiv-category-classifier-report.executed.ipynb)
