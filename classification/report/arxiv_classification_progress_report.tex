@@ -51,7 +51,7 @@ from Titles and Abstracts}}
 \section{Project question and current status}
 
 This project asks whether a small neural classifier can predict one paper's
-author-selected arXiv \texttt{primary\_category} from its title and abstract.
+arXiv-listed \texttt{primary\_category} from its title and abstract.
 Reliable routing could support search or dataset organization, but a predicted
 category is not proof of a paper's scientific identity. I completed data
 curation, duplicate checks, a train-validation-test pipeline, current-model
@@ -62,8 +62,8 @@ remain unstable.
 
 \subsection{Data, labels, and split}
 
-The arXiv export API returned 11,070 submissions from July 3--15, 2026 UTC
-using daily \texttt{submittedDate} queries \cite{arxivapi}. Curation removed
+The dataset's July 16 API snapshot recorded 11,070 submissions from July
+3--15, 2026 UTC using daily \texttt{submittedDate} queries \cite{arxivapi}. Curation removed
 3,319 records. Deterministic ranking by withdrawal markers, abstract depth,
 publication fields, title length, and category tagging, with proportional
 category quotas, removed 2,070; subject filtering removed 1,249 Astrophysics,
@@ -145,13 +145,12 @@ The comparison baseline always predicts training-majority class
 
 \subsection{Evaluation design}
 
-Training papers fit TF--IDF and network weights. Within the July 30 run,
-validation macro-F1 selected epoch 18; final metrics were computed after
-restoring that checkpoint. Test results did not select features, dropout, or
-epoch within this run. A fresh CLI training run wrote a version-1 checkpoint
-whose hashes bind weights to exact label order and vectorizer. The evidence
-notebook reconstructed the split and independently recomputed strict metrics
-from 1,157 predictions.
+Training papers fit TF--IDF and network weights. In the saved July 30 run,
+configuration fixed TF--IDF features and dropout at 0.25; validation macro-F1
+selected epoch 18 before test metrics were computed. Section 5 separates this
+run order from earlier test exposure. A version-1 checkpoint hashes the exact
+label order and vectorizer. The evidence notebook reconstructed the split and
+independently recomputed strict metrics from 1,157 predictions.
 
 \subsection{Metrics}
 
@@ -222,11 +221,11 @@ F1, and 61 had four or fewer test papers. The most frequent error was
 \texttt{cs.CL}$\rightarrow$\texttt{cs.AI} (12 papers), followed by
 \texttt{cs.CV}$\rightarrow$\texttt{cs.LG} (11).
 
-Primary-only scoring also hides cross-list ambiguity. A post-hoc audit, without
-changing predictions, found top-1 accuracy of 70.96\% when any author-listed
+Primary-only scoring counts cross-listed alternatives as errors. A post-hoc audit, without
+changing predictions, found top-1 accuracy of 70.96\% when any arXiv-listed
 category counted; 111 of 447 strict errors matched a listed secondary category.
-The assignment's primary-label result remains 61.37\%. The audit indicates that
-some confident disagreements reflect an intentionally narrow target.
+The assignment's primary-label result remains 61.37\%; those 111 predictions
+remain errors under its stated target.
 
 \clearpage
 
@@ -248,38 +247,36 @@ errors; all three are cited because their titles and labels are discussed
     Paper (short title) & Primary label & Prediction & Evidence-based interpretation \\
     \midrule
     2607.09583, ``Remote Seg.'' & \texttt{cs.CV} &
-    \texttt{cs.CV}, 99.95\% & Segmentation and remote-sensing image terms
-    align with the primary label; this is one correct example. \\
+    \texttt{cs.CV}, 99.95\% & Title and abstract explicitly discuss segmentation
+    and remote-sensing imagery; the prediction matches the primary label. \\
     2607.07372, ``Quantum Control'' & \texttt{cs.AR} &
-    \texttt{quant-ph}, 99.53\% & Quantum-control language dominates the title
-    and abstract. \texttt{quant-ph} is also author-listed, so this is a strict
+    \texttt{quant-ph}, 99.53\% & Title and abstract explicitly discuss quantum
+    control. \texttt{quant-ph} is also arXiv-listed, so this is a strict
     primary-label error rather than an unrelated prediction. \\
     2607.03072, ``LOTUSim'' & \texttt{cs.MA} &
-    \texttt{cs.RO}, 98.66\% & Marine-robotics vocabulary supports
-    \texttt{cs.RO}, which is also author-listed. The result exposes overlap
-    between primary and secondary submission labels. \\
+    \texttt{cs.RO}, 98.66\% & Title and abstract explicitly discuss marine
+    robotics. \texttt{cs.RO} is also arXiv-listed, showing overlap between
+    primary and secondary submission labels. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Observed errors combine overlap and imbalance. They do not establish model
-``understanding.'' Computation and Language, Artificial Intelligence, Computer
-Vision, and Machine Learning share vocabulary and dominate frequent confusion
-pairs. Cross-list matches explain 24.83\% of strict errors, while sparse classes
-still account for many zero-F1 outcomes. These observations do not identify a
-causal failure mechanism.
+All ten largest confusion pairs include Computation and Language, Artificial
+Intelligence, Computer Vision, or Machine Learning on at least one side.
+Cross-list matches account for 24.83\% of strict errors. Neither statistic
+establishes model ``understanding'' or identifies a causal failure mechanism.
 
 \section{Limitations, progress, and next step}
 
 This is one random split from a curated 13-day window, not a chronological
 forecast of future submissions. Subject-group exclusions shift the population,
-and title plus abstract omits full-text evidence. Primary labels can be
-cross-listed and 61 classes have at most four test papers. Dense TF--IDF tensors
+and title plus abstract omits full-text evidence. Papers may carry secondary
+cross-list categories, and 61 classes have at most four test papers. Dense TF--IDF tensors
 also limit scale. The split protects held-out rows and duplicate base IDs, but
 prior development viewed results from an earlier model on this same test
 partition. The current run avoided test-based selection, but the partition is
-not untouched across project history. No repeated seeds or confidence
-intervals have been measured.
+not untouched across project history. This report includes no repeated-seed
+analysis or confidence intervals.
 
 Next, I will change only dropout from 0.25 to 0.50 while
 holding the dataset, seed-42 split, TF--IDF features, optimizer, batch size, and
