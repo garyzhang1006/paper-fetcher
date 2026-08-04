@@ -54,7 +54,7 @@ from Titles and Abstracts}}
 This project asks whether a small neural classifier can predict one paper's
 arXiv-listed \texttt{primary\_category} from its title and abstract.
 Reliable routing could support search or dataset organization, but a predicted
-category is not proof of a paper's scientific identity. I completed data
+category is not proof of a paper's scientific identity. We completed data
 curation, duplicate checks, a train-validation-test pipeline, current-model
 retraining, held-out evaluation, and error inspection using the course
 classification workflow \cite{course}. Current blocker is sample size: the
@@ -232,7 +232,7 @@ remain errors under its stated target.
 
 \section{Error analysis}
 
-I replayed one correct case, screened the 25 highest-confidence strict errors,
+We replayed one correct case, screened the 25 highest-confidence strict errors,
 and examined two of them. Twelve screened predictions were listed secondary
 categories. Table~\ref{tab:errors} shows the correct paper and two strict
 errors; all three are cited because their titles and labels are discussed
@@ -279,10 +279,10 @@ partition. The current run avoided test-based selection, but the partition is
 not untouched across project history. This report includes no repeated-seed
 analysis or confidence intervals.
 
-Next, I will change only dropout from 0.25 to 0.50 while
+Next, we will change only dropout from 0.25 to 0.50 while
 holding the dataset, seed-42 split, TF--IDF features, optimizer, batch size, and
-epoch limit fixed. I predict a smaller train-validation gap and higher
-validation macro-F1. I will decide from validation macro-F1 before reading the
+epoch limit fixed. We predict a smaller train-validation gap and higher
+validation macro-F1. We will decide from validation macro-F1 before reading the
 new test result.
 
 \section{Conclusion}
