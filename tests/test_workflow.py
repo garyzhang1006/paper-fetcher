@@ -47,6 +47,9 @@ def test_push_ci_installs_ml_dependencies_and_runs_full_suite():
 
     assert "push:" in workflow
     assert "pull_request:" in workflow
+    assert "workflow_dispatch:" in workflow
     assert 'python-version: "3.13"' in workflow
     assert "python -m pip install '.[test,ml]'" in workflow
     assert "python -m pytest" in workflow
+    assert "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" in workflow
+    assert "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1" in workflow
