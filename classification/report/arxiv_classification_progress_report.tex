@@ -56,17 +56,18 @@ arXiv-listed \texttt{primary\_category} from its title and abstract.
 Reliable routing could support search or dataset organization, but a predicted
 category is not proof of a paper's scientific identity. We completed data
 curation, duplicate checks, a train-validation-test pipeline, current-model
-retraining, held-out evaluation, and error inspection using the course
+training, held-out evaluation, and error inspection using the course
 classification workflow \cite{course}. Current blocker is sample size: the
-median category has only four held-out papers, so rare-category estimates
-remain unstable.
+median category has only four held-out papers, so one error can materially
+change its per-class estimate.
 
 \subsection{Data, labels, and split}
 
 The dataset's July 16 API snapshot recorded 11,070 submissions from July
 3--15, 2026 UTC using daily \texttt{submittedDate} queries \cite{arxivapi}. Curation removed
 3,319 records. Deterministic ranking by withdrawal markers, abstract depth,
-publication fields, title length, and category tagging, with proportional
+optional metadata fields (DOI, journal reference, and comment), title length,
+and category tagging, with proportional
 category quotas, removed 2,070; subject filtering removed 1,249 Astrophysics,
 Condensed Matter, and Economics papers. The classifier kept 7,708 of the
 remaining 7,751 papers in 112 categories with at least five examples and
@@ -137,8 +138,8 @@ training vocabulary. The sparse matrix becomes a dense 8,000-value
 The PyTorch model, trained from scratch, maps 8,000 inputs to 384 ReLU hidden
 units, applies dropout 0.25, and emits 112 raw logits. It has 3,115,504
 trainable parameters. Square-root inverse-frequency class weights enter
-cross-entropy loss, which accepts unnormalized logits \cite{pytorchloss}.
-AdamW used learning rate 0.001 and weight decay 0.0001. Training used CPU,
+cross-entropy loss, which accepts unnormalized logits. AdamW used learning rate
+0.001 and weight decay 0.0001 \cite{pytorch}. Training used CPU,
 batch size 128, seed 42, and at most 20 epochs in PyTorch 2.13.0 with
 scikit-learn 1.9.0. Validation macro-F1 selected epoch 18; patience was four.
 The comparison baseline always predicts training-majority class
@@ -146,7 +147,7 @@ The comparison baseline always predicts training-majority class
 
 \subsection{Evaluation design}
 
-Training papers fit TF--IDF and network weights. In the saved July 30 run,
+Training papers fit TF--IDF and network weights. In the artifact set saved July 30,
 configuration fixed TF--IDF features and dropout at 0.25; validation macro-F1
 selected epoch 18 before test metrics were computed. Section 5 separates this
 run order from earlier test exposure. A version-1 checkpoint hashes the exact
@@ -171,8 +172,9 @@ equally, exposing rare-class failures that accuracy can hide.
 Dataset SHA-256 is
 \texttt{1bfe64d02fffedaaa65ef00866e47e8c688966062ba54572c404a08c4657c78a}.
 The source notebook records class counts, split replay, baseline, recomputed
-strict metrics, cross-list audit, two examined cases, and figure generation.
-Learning curves come from the saved July 30 training artifact.
+strict metrics, cross-list audit, two examined cases, and figure generation
+\cite{repository}.
+Learning curves come from the metrics artifact saved July 30.
 
 \clearpage
 
@@ -205,7 +207,7 @@ macro-F1.
   \includegraphics[width=\linewidth,height=3.15in,keepaspectratio]{results_diagnostics.pdf}
   \caption{Left: training accuracy continued toward 1.0 while validation
   accuracy and macro-F1 flattened; the dashed line marks the selected epoch.
-  Right: strict primary-label errors concentrate among overlapping computing
+  Right: strict primary-label errors concentrate among several computing
   categories. Counts come from the 1,157-paper test set.}
   \label{fig:diagnostics}
 \end{figure}
@@ -213,9 +215,10 @@ macro-F1.
 \subsection{Interpretation}
 
 Figure~\ref{fig:diagnostics} shows a large generalization gap. At selected
-epoch 18, training accuracy was 98.44\%, while validation accuracy was
-62.49\% and validation macro-F1 was 35.34\%; both validation scores declined
-by epoch 20. Among categories with at least ten test papers,
+epoch 18, training accuracy was 98.44\% ($n=5{,}394$), while validation
+accuracy was 62.49\% and validation macro-F1 was 35.34\% (both
+$n=1{,}157$); both validation scores declined by epoch 20. Among categories
+with at least ten test papers,
 High Energy Physics - Phenomenology had strongest F1 (93.10\%, $n=27$);
 Sound had weakest (26.67\%, $n=10$). Forty of 112 categories had zero test
 F1, and 61 had four or fewer test papers. The most frequent error was
@@ -262,8 +265,9 @@ errors; all three are cited because their titles and labels are discussed
   \end{tabularx}
 \end{table}
 
-All ten largest confusion pairs include Computation and Language, Artificial
-Intelligence, Computer Vision, or Machine Learning on at least one side.
+All nine confusion pairs with at least six errors include Computation and
+Language, Artificial Intelligence, Computer Vision and Pattern Recognition,
+or Machine Learning on at least one side.
 Cross-list matches account for 24.83\% of strict errors. Neither statistic
 establishes model ``understanding'' or identifies a causal failure mechanism.
 
@@ -272,12 +276,12 @@ establishes model ``understanding'' or identifies a causal failure mechanism.
 This is one random split from a curated 13-day window, not a chronological
 forecast of future submissions. Subject-group exclusions shift the population,
 and title plus abstract omits full-text evidence. Papers may carry secondary
-cross-list categories, and 61 classes have at most four test papers. Dense TF--IDF tensors
-also limit scale. The split protects held-out rows and duplicate base IDs, but
-prior development viewed results from an earlier model on this same test
-partition. The current run avoided test-based selection, but the partition is
-not untouched across project history. This report includes no repeated-seed
-analysis or confidence intervals.
+cross-list categories, and 61 classes have at most four test papers. The
+implementation densifies each 8,000-value TF--IDF row, so memory grows with
+papers times features. The split protects held-out rows and duplicate base IDs,
+but the same seed-42 test partition was evaluated in an earlier artifact set.
+Within the current artifact, validation macro-F1 selected the epoch before test
+scoring. This report includes no repeated-seed analysis or confidence intervals.
 
 Next, we will change only dropout from 0.25 to 0.50 while
 holding the dataset, seed-42 split, TF--IDF features, optimizer, batch size, and
@@ -293,8 +297,8 @@ This result does not establish reliable rare-class or future-paper performance.
 Most important completed step is validation-selected evaluation with duplicate
 and feature-leakage controls; remaining step is the dropout experiment.
 
-\begin{thebibliography}{9}
-\footnotesize
+\begin{thebibliography}{99}
+\fontsize{8}{8.4}\selectfont
 \setlength{\itemsep}{0pt}
 \setlength{\parskip}{0pt}
 
@@ -311,12 +315,17 @@ arXiv, \emph{Category Taxonomy},
 \url{https://arxiv.org/category_taxonomy}, accessed July 30, 2026.
 
 \bibitem{sklearn}
-scikit-learn developers, \emph{TfidfVectorizer documentation}, version 1.9.0,
-\url{https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html}.
+scikit-learn developers, \emph{scikit-learn 1.9 documentation},
+\url{https://scikit-learn.org/stable/}, accessed August 5, 2026.
 
-\bibitem{pytorchloss}
-PyTorch contributors, \emph{CrossEntropyLoss documentation}, version 2.13.0,
-\url{https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html}.
+\bibitem{pytorch}
+PyTorch contributors, \emph{PyTorch 2.13 documentation},
+\url{https://docs.pytorch.org/docs/stable/}, accessed August 5, 2026.
+
+\bibitem{repository}
+\emph{paper-fetcher: arXiv metadata, category-classifier code, and executed
+evidence notebook}, GitHub repository,
+\url{https://github.com/garyzhang1006/paper-fetcher}, accessed August 5, 2026.
 
 \bibitem{dabaja}
 M. Dabaja and T. Celik, ``Promptable Concept Segmentation from Above:
