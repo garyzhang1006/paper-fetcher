@@ -112,7 +112,11 @@ async function loadGraphInsights() {
     renderAnalysisList(
       elements.hotTopics,
       hot,
-      (item) => `${formatNumber(item.recent_count || item.current_count)} recent documents`,
+      (item) => (
+        `${formatNumber(item.recent_count || 0)} recent vs `
+        + `${formatNumber(item.baseline_count || 0)} baseline · `
+        + `log2 growth ${Number(item.growth || 0).toFixed(2)}`
+      ),
       historyMessage
     );
     renderAnalysisList(

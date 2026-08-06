@@ -141,7 +141,8 @@ Hubs include degree, weighted degree, and deterministic PageRank. Clusters are
 connected components using `RELATED_TO` score at least 0.35. Trend analysis
 compares equal recent and baseline windows using per-source document shares, so
 a high-volume feed cannot dominate by volume alone. Emerging topics require at
-least three recent documents and positive smoothed log growth.
+least three recent documents and positive smoothed log growth. The API and UI
+show recent-versus-baseline counts and log2 growth for direct evolution checks.
 
 Read graph outputs through:
 
