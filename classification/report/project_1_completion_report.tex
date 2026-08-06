@@ -2,11 +2,12 @@
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage[margin=0.62in]{geometry}
+\usepackage[margin=0.68in]{geometry}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{microtype}
+\usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
 \usepackage{fancyhdr}
@@ -41,17 +42,25 @@ Daily Research Knowledge Graph}}
 \maketitle
 \vspace{-1.8em}
 
-\section*{Goal and current status}
+\section{Project question and current status}
 
 Project 1 asks whether a daily agent can collect machine-learning research and
-organize it as an evidence-backed knowledge graph. The implemented
-\texttt{paper-fetcher-agent} ingests arXiv and enabled public RSS or Atom feeds,
-extracts grounded features, atomically rebuilds the graph, computes analyses,
-and persists SQLite plus bounded JSON outputs. GitHub Actions schedules it each
-day at 13:17 UTC and supports manual runs
+organize it as an evidence-backed knowledge graph that researchers can search
+and explore. The implemented \texttt{paper-fetcher-agent} ingests a stored
+arXiv corpus and enabled public RSS or Atom feeds, extracts grounded features,
+atomically rebuilds the graph, computes graph and trend analyses, and persists
+SQLite plus bounded JSON outputs. GitHub Actions schedules the live collector
+each day at 13:17 UTC and supports manual runs
 \reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/.github/workflows/daily-arxiv-fetch.yml}{workflow}.
 
-\section*{Verified August 6 snapshot}
+The complete path now runs from collection through a browser interface. The
+active graph is deterministic under the rules extractor and every semantic
+edge records either extractor evidence or source metadata. Remaining work is
+evaluation rather than basic implementation: summary quality and graph
+placement have not been judged by human researchers, public-feed coverage is
+bounded, and the daily arXiv job currently queries only \texttt{cs.LG}.
+
+\subsection{Verified August 6 snapshot}
 
 \begin{table}[h]
   \centering
@@ -75,37 +84,257 @@ database is \texttt{data/arxiv\_kg.sqlite3}; bounded analysis artifacts are in
 \texttt{output/knowledge\_graph/}
 \reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/output/knowledge_graph/summary.json}{run summary}.
 
-\section*{How the graph works}
+\subsection{Requirement coverage}
 
-Document nodes connect to topics, methods, research goals, datasets, metrics,
-and arXiv categories. Semantic edges require exact extractor evidence or source
-metadata; free keywords do not create them. \texttt{RELATED\_TO} uses bounded
-IDF-weighted supported-concept overlap, threshold 0.20, and at most ten
-neighbors per document. Hubs use weighted PageRank and degree; clusters use
-related edges scoring at least 0.35. Search and five bounded JSON APIs expose
-placement explanations, hubs, clusters, and topic trends
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{>{\bfseries}p{0.24\linewidth}Y}
+    \toprule
+    Project requirement & Observed implementation \\
+    \midrule
+    Collect daily & Scheduled workflow plus manual dispatch. \\
+    Use several sources & arXiv, research-blog/report feeds, and one public social feed. \\
+    Build knowledge graph & Four document types and six concept/category types. \\
+    Explain relationships & Typed edges retain evidence or explicit metadata basis. \\
+    Find structure & Search, placement, hubs, clusters, hot topics, and emerging topics. \\
+    Recover safely & Transactional source checkpoints and atomic graph replacement. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The snapshot contains no isolated document nodes. This demonstrates structural
+coverage inside the stored corpus, not scientific correctness or importance.
+Those stronger claims require human evaluation.
+
+\clearpage
+
+\section{Collection, normalization, and feature extraction}
+
+\subsection{Inputs and source boundaries}
+
+The agent starts from version-aware arXiv records already stored in the
+repository and checks configured live sources. Feed adapters normalize each
+item into a common schema containing source identity, stable item identifier,
+URL, title, summary text, publication and update timestamps, retrieval time,
+content hash, and raw provenance. Report-like Hugging Face titles become
+\texttt{report} nodes; other Hugging Face and DeepMind entries become
+\texttt{blog\_post} nodes. Reddit entries become \texttt{social\_post} nodes.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{Y l r Y}
+    \toprule
+    Source & Stored role & Items & Boundary \\
+    \midrule
+    Stored arXiv corpus & papers & 7,794 & Multi-disciplinary historical corpus \\
+    Google DeepMind & research blog & 100 & Public RSS or Atom output \\
+    Hugging Face & blog/report & 835 & Public feed; 29 report-like titles \\
+    Reddit r/MachineLearning & social media & 25 & One public subreddit feed \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Public feeds do not represent all blogs, reports, or social media. The workflow
+does not use authenticated or private sources. The tracked run summary has
+\texttt{arxiv: null}, meaning that particular snapshot proves feed collection
+and graph construction, not a fresh arXiv fetch during that exact run.
+
+\subsection{Daily pipeline}
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{p{0.08\linewidth}p{0.25\linewidth}Y}
+    \toprule
+    Step & Operation & Output or safety rule \\
+    \midrule
+    1 & Bootstrap stored papers & Stream JSONL; keep canonical versioned records. \\
+    2 & Collect enabled sources & Enforce response, redirect, item-count, and time bounds. \\
+    3 & Normalize and upsert & Store content hash and provenance; update idempotently. \\
+    4 & Extract missing features & Version feature rows by extractor and prompt versions. \\
+    5 & Build graph & Validate node identities and edges before atomic replacement. \\
+    6 & Analyze and export & Write hubs, clusters, trends, placement data, and summary JSON. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Grounded feature extraction}
+
+Rules extractor 1.4 produced 7,794 current paper feature rows. It recognizes a
+documented finite vocabulary for topics, methods, research goals, datasets,
+metrics, contributions, and limitations. Exact text evidence accompanies
+semantic values. Related-work and negation checks reduce false attributions;
+unsupported free keywords never create semantic graph edges.
+
+Summaries copy the first sentence of an abstract or feed summary and retain
+source plus extractor provenance. This avoids a generated model inventing a
+new factual claim, but extractive does not automatically mean useful or
+complete. No human-rated summary-quality study has been run.
+
+\subsection{Pipeline pseudocode}
+
+\begingroup
+\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}lY@{}}
+1. & stream stored papers into SQLite \\
+2. & for each enabled source: fetch, validate, normalize, upsert, checkpoint \\
+3. & extract only papers missing current extractor version \\
+4. & build candidate nodes and evidence-backed typed edges \\
+5. & validate counts and references, then replace active graph atomically \\
+6. & compute bounded analyses and write JSON artifacts \\
+\end{tabularx}
+\endgroup
+
+\clearpage
+
+\section{Knowledge graph, analysis, and interface}
+
+\subsection{Graph schema and active counts}
+
+Document nodes represent papers, reports, blog posts, and social posts.
+Concept nodes represent arXiv categories, topics, methods, research goals,
+datasets, and metrics. ArXiv categories and configured feed topics use source
+metadata. Other semantic relationships require exact extractor evidence.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{Y r Y r}
+    \toprule
+    Node type & Count & Node type & Count \\
+    \midrule
+    Paper & 7,794 & Category & 148 \\
+    Report & 29 & Dataset & 11 \\
+    Blog post & 906 & Method & 11 \\
+    Social post & 25 & Metric & 10 \\
+    Topic & 7 & Research goal & 10 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{Y r Y}
+    \toprule
+    Relation & Count & Meaning \\
+    \midrule
+    \texttt{RELATED\_TO} & 37,656 & Supported-concept overlap between documents \\
+    \texttt{IN\_CATEGORY} & 13,180 & Recorded arXiv category membership \\
+    \texttt{ABOUT\_TOPIC} & 3,056 & Evidence or configured source topic \\
+    \texttt{PURSUES\_GOAL} & 1,972 & Extracted research objective \\
+    \texttt{USES\_METHOD} & 1,636 & Extracted method evidence \\
+    \texttt{REPORTS\_METRIC} & 1,624 & Extracted reported metric \\
+    \texttt{EVALUATES\_ON} & 132 & Extracted dataset evidence \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Relationships, hubs, and clusters}
+
+\texttt{RELATED\_TO} uses IDF-weighted overlap among supported concepts. Edges
+need score at least 0.20, and each document has at most ten related-document
+neighbors. This degree cap keeps a common topic from turning the graph into one
+dense component. Hub analysis reports weighted PageRank, degree, and weighted
+degree. These measure graph centrality, not research quality.
+
+Clusters are connected components over \texttt{RELATED\_TO} edges scoring at
+least 0.35. Labels come from concepts supported inside each component. This is
+a deterministic graph grouping, not a learned scientific taxonomy
 \reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}.
 
-Summaries copy the first abstract or feed-summary sentence and retain
-provenance, avoiding generated factual claims. Seven-day recent and baseline
-windows ending August 6 have status \texttt{ok}; no topic met both the
-three-document minimum and positive-growth condition for an emerging-topic label
+\subsection{Hot and emerging topics}
+
+Trend analysis compares equal recent and baseline windows using mean
+per-source document shares, which prevents a high-volume source from dominating
+raw counts. Emerging score requires at least three recent documents and
+positive smoothed log growth. Seven-day windows ending August 6 have status
+\texttt{ok}; no topic met both conditions in the active mixed-source snapshot
 \reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}.
 
-\section*{Scope and remaining limits}
+\subsection{Search and exploration interface}
+
+Local browser UI combines document search, graph-placement explanation, hot
+topics, emerging topics, hubs, and clusters. Five bounded JSON APIs expose the
+same data. Placement output names the selected document, typed relationships,
+and neighboring nodes, so a user can inspect why it appears in one graph area.
+Integration tests cover empty graph state, placement, active build metadata,
+and API bound validation. Active build ID is
+\texttt{95ac2bfcd067acf6cf2b7ce03fd686920ebfb14a95b3364d0c38095bcbae00c2}.
+
+\clearpage
+
+\section{Reliability, limitations, and next work}
+
+\subsection{Persistence and recovery}
+
+Each public feed stores normalized items and its success checkpoint in one
+SQLite transaction. A failure therefore cannot commit a checkpoint without
+its corresponding items. Graph replacement is also atomic: validation occurs
+before the active build changes, and a failed rebuild leaves the prior graph
+and analyses readable. Tracked database integrity is \texttt{ok}, and the
+foreign-key check returns no violations.
+
+The first August 6 arXiv smoke run found 3,021 submissions beyond the configured
+200-paper safety cap and stopped without advancing its checkpoint. Because this
+project intentionally keeps a bounded corpus, the two \texttt{cs.LG}
+checkpoints were rebased to August 6. Papers not already stored from July 13
+through the rebase time were deliberately skipped. A later 24-hour overlap run
+completed with zero new submissions and a valid checkpoint transition
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}.
+
+\subsection{Relationship to category classification}
+
+The repository also contains a separate neural classifier trained on 7,708
+eligible papers across 112 primary arXiv categories. Its held-out test set has
+1,157 papers; observed accuracy is 61.37\%, macro-F1 is 34.65\%, weighted-F1 is
+59.15\%, and top-3 accuracy is 84.62\%. Those predictions are not graph ground
+truth and do not create graph edges. Graph placement instead uses recorded
+arXiv categories, configured source metadata, and rule-extractor evidence. The
+classifier's architecture, errors, and limitations remain in the separate
+four-page classification report.
+
+\subsection{Interpretation limits}
 
 Public feeds do not cover every blog or social platform; Reddit input comes
 from one public subreddit. The rules extractor has a finite vocabulary, so a
 missing edge can mean missing evidence or an unrecognized concept. No
-human-rated summary study has been run. Trends describe this corpus, not
-research quality or future impact.
+human-rated study has checked summary usefulness or graph placement. An absent
+edge can mean absent evidence or an unrecognized term. Trend scores describe
+movement inside this corpus; they do not establish research quality, causal
+importance, whole-field coverage, or future impact.
 
-The first August 6 arXiv smoke run found 3,021 submissions beyond the configured
-200-paper safety cap. The checkpoint was deliberately rebased to August 6 to
-keep the corpus bounded, so papers not already stored from July 13 through that
-rebase time were skipped
-\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}. Category-classifier predictions
-are not graph ground truth and do not create graph edges; classification
-results remain documented in the separate four-page classification report.
+\subsection{Measurable next steps}
+
+\begin{enumerate}[nosep,leftmargin=*]
+  \item Have two domain researchers rate a stratified sample of 100 summaries
+  and 100 placement explanations for factual support and usefulness.
+  \item Expand the rules vocabulary only for concepts with documented false
+  negatives, then rerun the same placement audit.
+  \item Add another independent public research feed and compare source-normalized
+  trend stability before and after the change.
+  \item Run the scheduled agent for 30 days and report per-source success,
+  failure, and checkpoint-recovery counts before expanding collection volume.
+\end{enumerate}
+
+\subsection{Conclusion}
+
+Project 1 now provides a reproducible daily research graph with 8,754 documents,
+8,951 nodes, 59,256 typed edges, and no isolated document nodes. Its strongest
+property is traceability: semantic placement is tied to text evidence or source
+metadata, and operational state is stored transactionally. Current results
+show a working research-navigation system inside a bounded corpus. They do not
+yet prove human-level summary accuracy, scientifically correct placement, or
+complete coverage of machine-learning research.
+
+\vfill
+\footnotesize
+\textbf{Repository evidence.}
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/output/knowledge_graph/summary.json}{run summary}
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/.github/workflows/daily-arxiv-fetch.yml}{workflow}
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/classification/report/arxiv_classification_progress_report.tex}{classification report source}
 
 \end{document}
