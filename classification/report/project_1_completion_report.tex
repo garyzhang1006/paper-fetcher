@@ -1,0 +1,111 @@
+\documentclass[10pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.62in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+
+\definecolor{reportblue}{HTML}{174A6E}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\reposource}[2]{\href{#1}{\textcolor{reportblue}{[#2]}}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlength{\headheight}{13pt}
+\setlength{\emergencystretch}{2em}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Project 1: Machine Learning Research Knowledge Graph}
+\rhead{\small \thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=reportblue,
+  urlcolor=reportblue,
+  pdftitle={Project 1 Completion Report: Daily Research Knowledge Graph},
+  pdfauthor={Gary Zhang, Sanvi Inturi, Elaine Harris-Stapleton, Agastya Iyengar}
+}
+
+\title{\vspace{-2.1em}\textbf{Project 1 Completion Report\\
+Daily Research Knowledge Graph}}
+\author{\makebox[\dimexpr\textwidth-2\tabcolsep\relax][l]{\hspace*{1.00in}\small Gary Zhang, Sanvi Inturi,
+  Elaine Harris-Stapleton, Agastya Iyengar \qquad \textsc{AI Bootcamp}}}
+\date{\normalsize August 6, 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.8em}
+
+\section*{Goal and current status}
+
+Project 1 asks whether a daily agent can collect machine-learning research and
+organize it as an evidence-backed knowledge graph. The implemented
+\texttt{paper-fetcher-agent} ingests arXiv and enabled public RSS or Atom feeds,
+extracts grounded features, atomically rebuilds the graph, computes analyses,
+and persists SQLite plus bounded JSON outputs. GitHub Actions schedules it each
+day at 13:17 UTC and supports manual runs
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/.github/workflows/daily-arxiv-fetch.yml}{workflow}.
+
+\section*{Verified August 6 snapshot}
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabularx}{\linewidth}{Y r Y r}
+    \toprule
+    Measure & Count & Measure & Count \\
+    \midrule
+    Paper nodes & 7,794 & Report nodes & 29 \\
+    Blog-post nodes & 906 & Social-post nodes & 25 \\
+    Document nodes & 8,754 & Concept/category nodes & 197 \\
+    Total nodes & 8,951 & Typed edges & 59,256 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+The active snapshot combines 100 Google DeepMind items, 835 Hugging Face
+items, and 25 public Reddit \texttt{r/MachineLearning} posts with the stored
+arXiv corpus. Every one of the 8,754 document nodes has at least one edge. The
+database is \texttt{data/arxiv\_kg.sqlite3}; bounded analysis artifacts are in
+\texttt{output/knowledge\_graph/}
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/output/knowledge_graph/summary.json}{run summary}.
+
+\section*{How the graph works}
+
+Document nodes connect to topics, methods, research goals, datasets, metrics,
+and arXiv categories. Semantic edges require exact extractor evidence or source
+metadata; free keywords do not create them. \texttt{RELATED\_TO} uses bounded
+IDF-weighted supported-concept overlap, threshold 0.20, and at most ten
+neighbors per document. Hubs use weighted PageRank and degree; clusters use
+related edges scoring at least 0.35. Search and five bounded JSON APIs expose
+placement explanations, hubs, clusters, and topic trends
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}.
+
+Summaries copy the first abstract or feed-summary sentence and retain
+provenance, avoiding generated factual claims. Seven-day recent and baseline
+windows ending August 6 have status \texttt{ok}; no topic met both the
+three-document minimum and positive-growth condition for an emerging-topic label
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}.
+
+\section*{Scope and remaining limits}
+
+Public feeds do not cover every blog or social platform; Reddit input comes
+from one public subreddit. The rules extractor has a finite vocabulary, so a
+missing edge can mean missing evidence or an unrecognized concept. No
+human-rated summary study has been run. Trends describe this corpus, not
+research quality or future impact.
+
+The first August 6 arXiv smoke run found 3,021 submissions beyond the configured
+200-paper safety cap. The checkpoint was deliberately rebased to August 6 to
+keep the corpus bounded, so papers not already stored from July 13 through that
+rebase time were skipped
+\reposource{https://github.com/garyzhang1006/paper-fetcher/blob/main/docs/PROJECT_1_SYSTEM_REPORT.md}{system report}. Category-classifier predictions
+are not graph ground truth and do not create graph edges; classification
+results remain documented in the separate four-page classification report.
+
+\end{document}
