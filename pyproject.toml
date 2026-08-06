@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 paper-fetcher = "arxiv_kg.web:main"
 paper-fetcher-daily = "arxiv_kg.daily:main"
+paper-fetcher-agent = "arxiv_kg.agent:main"
 paper-fetcher-validity = "arxiv_kg.validity_dataset:main"
 paper-fetcher-classify = "arxiv_kg.category_classifier:main"
 paper-fetcher-predict = "arxiv_kg.category_classifier:predict_main"

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Fetch and browse recent arXiv research papers.">
-    <title>Paper Fetcher</title>
+    <meta name="description" content="Collect and explore machine-learning research through an evidence-backed knowledge graph.">
+    <title>Machine Learning Research Graph</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css?v=2">
     <script src="/app.js" defer></script>
@@ -28,6 +28,10 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 3v4M16 3v4M4 10h16"></path></svg>
             Library
           </a>
+          <a class="nav-item" href="#knowledge-graph">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="18" cy="18" r="2.5"></circle><path d="m7.5 11 8-4M7.5 13l8 4"></path></svg>
+            Knowledge graph
+          </a>
           <button class="nav-item" type="button" data-focus-fetch>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"></path></svg>
             New fetch
@@ -50,7 +54,7 @@
           </button>
           <div>
             <p class="eyebrow">Research workspace</p>
-            <h1>Paper radar</h1>
+            <h1>Research graph</h1>
           </div>
           <a class="github-link" href="https://github.com/garyzhang1006/paper-fetcher" target="_blank" rel="noreferrer">
             View source
@@ -84,6 +88,10 @@
               <article class="stat-card">
                 <span class="stat-icon gold" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="m9 11 6-4M9 13l6 4"></path></svg></span>
                 <div><strong id="graph-count">0</strong><span>Graph links</span></div>
+              </article>
+              <article class="stat-card">
+                <span class="stat-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5zM8 9h8M8 13h6"></path></svg></span>
+                <div><strong id="source-count">0</strong><span>Feed reports &amp; posts</span></div>
               </article>
             </section>
 
@@ -166,6 +174,49 @@
 
             <div id="fetch-status" class="fetch-status" role="status" aria-live="polite" hidden></div>
           </aside>
+
+          <section class="graph-workspace" id="knowledge-graph" aria-labelledby="graph-heading">
+            <div class="graph-header">
+              <div>
+                <p class="eyebrow">Evidence-backed connections</p>
+                <h2 id="graph-heading">Research knowledge graph</h2>
+                <p class="section-copy">Explore where a paper sits, which concepts connect it to other work, and which research directions are growing.</p>
+              </div>
+              <div class="graph-build-status" id="graph-build-status" role="status">Checking graph…</div>
+            </div>
+
+            <div class="placement-panel">
+              <form id="placement-form" class="placement-form">
+                <label for="placement-id">Paper or feed-item ID</label>
+                <div>
+                  <input id="placement-id" name="id" placeholder="Example: 2607.00001" autocomplete="off">
+                  <button class="primary-button" type="submit">Explain placement</button>
+                </div>
+              </form>
+              <div id="placement-result" class="placement-result" aria-live="polite">
+                Enter a document ID to see supported topics, methods, research goals, datasets, metrics, and related work.
+              </div>
+            </div>
+
+            <div class="analysis-grid">
+              <article class="analysis-card">
+                <div class="analysis-heading"><span class="analysis-kicker">Momentum</span><h3>Hot topics</h3></div>
+                <ol id="hot-topic-list" class="analysis-list"><li>Graph analysis has not run yet.</li></ol>
+              </article>
+              <article class="analysis-card">
+                <div class="analysis-heading"><span class="analysis-kicker">Early signal</span><h3>Emerging topics</h3></div>
+                <ol id="emerging-topic-list" class="analysis-list"><li>Graph analysis has not run yet.</li></ol>
+              </article>
+              <article class="analysis-card">
+                <div class="analysis-heading"><span class="analysis-kicker">Centrality</span><h3>Graph hubs</h3></div>
+                <ol id="hub-list" class="analysis-list"><li>Graph analysis has not run yet.</li></ol>
+              </article>
+              <article class="analysis-card">
+                <div class="analysis-heading"><span class="analysis-kicker">Communities</span><h3>Research clusters</h3></div>
+                <ol id="cluster-list" class="analysis-list"><li>Graph analysis has not run yet.</li></ol>
+              </article>
+            </div>
+          </section>
         </div>
       </main>
     </div>

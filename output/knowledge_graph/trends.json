@@ -1,0 +1,44 @@
+{
+  "as_of": "2026-08-06",
+  "baseline_end": "2026-07-30",
+  "baseline_start": "2026-07-24",
+  "coverage_days": 2366,
+  "emerging": [],
+  "formula": "source_share=topic_unique_documents/source_unique_documents; window_share=mean(active_source_shares); growth=log2((recent_share+0.01)/(baseline_share+0.01)); emerging_score=max(0,growth)*log1p(recent_count); minimum_recent_count=3",
+  "hot": [
+    {
+      "baseline_count": 7,
+      "baseline_share": 1.0,
+      "emerging_score": 0.0,
+      "growth": 0.0,
+      "recent_count": 28,
+      "recent_share": 1.0,
+      "topic": "machine learning",
+      "topic_id": "topic:dcaa8e5ecb8d70ad"
+    },
+    {
+      "baseline_count": 3,
+      "baseline_share": 0.4583333333333333,
+      "emerging_score": 0.0,
+      "growth": -4.327071398163322,
+      "recent_count": 1,
+      "recent_share": 0.013333333333333334,
+      "topic": "robotics",
+      "topic_id": "topic:7793ba1ad02f2d82"
+    },
+    {
+      "baseline_count": 0,
+      "baseline_share": 0.0,
+      "emerging_score": 0.0,
+      "growth": 1.222392421336448,
+      "recent_count": 1,
+      "recent_share": 0.013333333333333334,
+      "topic": "natural language processing",
+      "topic_id": "topic:dc453b2d95200c3c"
+    }
+  ],
+  "recent_end": "2026-08-06",
+  "recent_start": "2026-07-31",
+  "status": "ok",
+  "window_days": 7
+}

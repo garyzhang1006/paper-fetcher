@@ -1,28 +1,31 @@
-name: Daily arXiv fetch
+name: Daily research knowledge graph
 
 on:
+  schedule:
+    - cron: "17 13 * * *"
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 concurrency:
   group: daily-arxiv-fetch
   cancel-in-progress: false
 
 jobs:
-  fetch:
+  collect:
+    permissions:
+      contents: read
+    outputs:
+      agent_outcome: ${{ steps.agent.outcome }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out default branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.14"
           cache: pip
@@ -47,10 +50,15 @@ jobs:
           --output-dir "${RUNNER_TEMP}"
           --ExecutePreprocessor.timeout=180
 
-      - name: Fetch bounded daily update
+      - name: Run bounded daily research agent
+        id: agent
+        continue-on-error: true
         run: >-
-          paper-fetcher-daily
+          paper-fetcher-agent
           --db data/arxiv_kg.sqlite3
+          --dataset dataset/papers.jsonl
+          --sources config/sources.json
+          --output-dir output/knowledge_graph
           --category cs.LG
           --max-results 200
           --first-run-lookback-hours 24
@@ -58,16 +66,52 @@ jobs:
           --revision-max-results 200
           --revision-first-run-lookback-hours 24
 
-      - name: Persist successful papers and checkpoints
+      - name: Preserve valid state from successful sources
+        if: always() && steps.agent.outcome != 'skipped'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: research-graph-state
+          path: |
+            data/arxiv_kg.sqlite3
+            output/knowledge_graph
+          if-no-files-found: error
+          retention-days: 1
+
+  persist:
+    needs: collect
+    if: always() && needs.collect.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Restore collected state
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: research-graph-state
+          path: .
+
+      - name: Persist collection, graph, and analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/arxiv_kg.sqlite3
+          git add data/arxiv_kg.sqlite3 output/knowledge_graph
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "Update daily arXiv papers"
+          git commit -m "Update daily research knowledge graph"
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${DEFAULT_BRANCH}"
+
+      - name: Report degraded collection
+        if: needs.collect.outputs.agent_outcome == 'failure'
+        run: |
+          echo "One or more sources failed; successful source state was persisted."
+          exit 1

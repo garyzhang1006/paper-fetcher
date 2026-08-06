@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Research Lab Blog</title>
+    <link>https://research.example.org/blog</link>
+    <item>
+      <guid isPermaLink="false">post-42</guid>
+      <title>Graph agents for scientific discovery</title>
+      <link>https://research.example.org/blog/graph-agents</link>
+      <dc:creator>Ada Researcher</dc:creator>
+      <category>Machine Learning</category>
+      <category>Agents</category>
+      <pubDate>Wed, 05 Aug 2026 14:30:00 +0000</pubDate>
+      <description><![CDATA[<p>A concise source-provided summary.</p>]]></description>
+      <content:encoded><![CDATA[<p>We describe a graph agent.</p><p>Evidence stays linked to its source.</p>]]></content:encoded>
+    </item>
+    <item>
+      <link>https://research.example.org/blog/url-identity</link>
+      <description>Identity falls back to the canonical URL.</description>
+    </item>
+  </channel>
+</rss>

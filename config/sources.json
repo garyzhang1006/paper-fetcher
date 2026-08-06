@@ -1,0 +1,34 @@
+{
+  "sources": [
+    {
+      "source_id": "google-deepmind-blog",
+      "name": "Google DeepMind Blog",
+      "source_kind": "research_blog",
+      "feed_url": "https://deepmind.google/blog/rss.xml",
+      "homepage_url": "https://deepmind.google/blog/",
+      "enabled": true,
+      "max_items": 1000,
+      "default_topics": ["machine learning"]
+    },
+    {
+      "source_id": "hugging-face-blog",
+      "name": "Hugging Face Blog",
+      "source_kind": "research_report",
+      "feed_url": "https://huggingface.co/blog/feed.xml",
+      "homepage_url": "https://huggingface.co/blog",
+      "enabled": true,
+      "max_items": 1000,
+      "default_topics": ["machine learning"]
+    },
+    {
+      "source_id": "reddit-machine-learning",
+      "name": "Reddit r/MachineLearning",
+      "source_kind": "social_media",
+      "feed_url": "https://www.reddit.com/r/MachineLearning/.rss",
+      "homepage_url": "https://www.reddit.com/r/MachineLearning/",
+      "enabled": true,
+      "max_items": 1000,
+      "default_topics": ["machine learning"]
+    }
+  ]
+}

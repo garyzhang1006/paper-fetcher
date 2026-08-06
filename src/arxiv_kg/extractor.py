@@ -5,14 +5,13 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC, abstractmethod
+from collections import Counter
 from urllib.parse import urlsplit
-
-from sklearn.feature_extraction.text import CountVectorizer
 
 from .models import Evidence, FeatureField, PaperFeatures
 from .validity import extract_validity_envelopes
 
-EXTRACTOR_VERSION = "1.3"
+EXTRACTOR_VERSION = "1.4"
 PROMPT_VERSION = "paper-features-v1"
 
 METHOD_VOCABULARY = {
@@ -107,6 +106,35 @@ LIMITATION_MARKERS = (
     "limited to",
 )
 TRUSTED_CODE_HOSTS = ("github.com", "gitlab.com", "huggingface.co")
+KEYWORD_STOP_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "but",
+        "by",
+        "for",
+        "from",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "our",
+        "that",
+        "the",
+        "their",
+        "this",
+        "to",
+        "we",
+        "with",
+    }
+)
 
 
 def _matched_terms(
@@ -266,20 +294,16 @@ def _top_keywords(text: str, maximum: int = 12) -> list[str]:
     clean = " ".join(text.split())
     if not clean:
         return []
-    vectorizer = CountVectorizer(
-        stop_words="english", ngram_range=(1, 2), max_features=200, min_df=1
-    )
-    try:
-        matrix = vectorizer.fit_transform([clean])
-    except ValueError as exc:
-        if "empty vocabulary" in str(exc):
-            return []
-        raise
-    counts = matrix.toarray()[0]
-    terms = vectorizer.get_feature_names_out()
-    ranked = sorted(
-        zip(terms, counts, strict=True), key=lambda item: (-item[1], item[0])
-    )
+    tokens = [
+        token
+        for token in re.findall(r"(?u)\b\w\w+\b", clean.casefold())
+        if token not in KEYWORD_STOP_WORDS
+    ]
+    if not tokens:
+        return []
+    terms = [*tokens, *(f"{left} {right}" for left, right in zip(tokens, tokens[1:]))]
+    counts = Counter(terms)
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     return [term for term, count in ranked if count > 0][:maximum]
 
 

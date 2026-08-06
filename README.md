@@ -1,8 +1,9 @@
-# arXiv Paper Fetcher
+# Machine Learning Research Knowledge Graph
 
-Tutorial 1 source for fetching arXiv metadata, storing revisions in SQLite,
-validating the first knowledge-graph data models, and browsing saved papers in
-a local web UI.
+Daily research agent for collecting arXiv papers, public research feeds, and a
+public machine-learning social feed. It extracts grounded summaries and typed
+concepts, builds an evidence-backed knowledge graph, identifies hubs and
+clusters, and measures hot or emerging topics over time.
 
 ## Setup
 
@@ -20,7 +21,9 @@ paper-fetcher
 
 Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The UI lets you choose
 arXiv categories, set a first-run lookback window, fetch revisions, search
-saved titles/authors/abstracts, and filter the local library by category.
+saved titles/authors/abstracts, filter the local library by category, explain a
+document's graph placement, and inspect hubs, clusters, hot topics, and emerging
+topics.
 Its defaults match Notebook 1's bounded live example: `cs.LG`, a 24-hour
 lookback, a 200-paper submission cap, and a 200-paper revision cap.
 
@@ -56,13 +59,56 @@ The command exits nonzero if an API page fails or either query exceeds its cap.
 Rows saved before failure are safe because upserts are idempotent, while atomic
 checkpoints remain at the last complete run.
 
-## Manual GitHub Actions update
+## Run the complete research agent
 
-Scheduled fetching is disabled. `.github/workflows/daily-arxiv-fetch.yml` runs
-only when manually started with GitHub Actions `workflow_dispatch`. It installs
-the package, runs the full offline test suite, performs one bounded fetch, then
-commits `data/arxiv_kg.sqlite3` only after success. Repository Actions settings
-must allow `GITHUB_TOKEN` write access for the final push.
+The Project 1 command imports the curated corpus as a stream, collects recent
+arXiv updates, reads every enabled public RSS or Atom source, extracts missing
+paper features, rebuilds the graph atomically, computes graph analysis, and
+writes bounded JSON summaries:
+
+```bash
+paper-fetcher-agent \
+  --db data/arxiv_kg.sqlite3 \
+  --dataset dataset/papers.jsonl \
+  --sources config/sources.json \
+  --output-dir output/knowledge_graph \
+  --category cs.LG
+```
+
+Use `--offline` to skip network collection while still importing, extracting,
+building, and analyzing. The complete command exits nonzero if arXiv or an
+enabled feed fails. Each feed's items and success checkpoint commit together.
+Successful sources still rebuild a degraded snapshot and write their state; the
+report records each failed source. A failed graph rebuild leaves the previous
+graph readable.
+
+For bounded recovery, `--no-arxiv` runs configured feeds without changing the
+arXiv checkpoint, while `--no-feeds` runs arXiv without public feeds. Scheduled
+runs use neither switch and collect every configured source.
+
+Configured public feeds are:
+
+- Google DeepMind Blog RSS, stored as research blog posts;
+- Hugging Face Blog RSS, whose explicit report-like titles become reports and
+  whose other entries become blog posts; and
+- Reddit r/MachineLearning Atom, stored as social posts.
+
+The complete-feed limit is 1,000 entries per configured source. Exceeding that
+limit fails loudly without advancing the source checkpoint; entries are never
+silently truncated.
+
+This is bounded public-feed coverage. It does not ingest private feeds,
+authenticated social APIs, or every research blog.
+
+## Daily GitHub Actions update
+
+`.github/workflows/daily-arxiv-fetch.yml` runs every day at 13:17 UTC and also
+supports manual `workflow_dispatch`. It installs the package, runs the full
+offline test suite and Notebook 2, then runs `paper-fetcher-agent`. Only a
+complete or degraded agent run commits valid `data/arxiv_kg.sqlite3` state and
+bounded summaries under `output/knowledge_graph/`. A degraded run then fails
+the workflow visibly. Repository Actions settings must allow
+`GITHUB_TOKEN` write access for the final push.
 
 The persisted checkpoint covers skipped days because the next query begins at
 the last successful checkpoint minus the overlap. A capped or failed run does
@@ -71,6 +117,44 @@ adding a category uses its full first-run lookback instead of inheriting another
 category's checkpoint. The revision query is sorted by last-updated time, so a
 new version of an older paper is refreshed even when its original submission is
 outside the new-paper window.
+
+## Knowledge graph contract
+
+Document nodes are `paper`, `report`, `blog_post`, or `social_post`. Extractor
+evidence supports these concept relationships:
+
+- domain to `topic` through `ABOUT_TOPIC`;
+- research task to `research_goal` through `PURSUES_GOAL`;
+- method through `USES_METHOD`;
+- dataset through `EVALUATES_ON`; and
+- metric through `REPORTS_METRIC`.
+
+Paper category edges use arXiv source metadata through `IN_CATEGORY`.
+Configured feed topics use source metadata through `ABOUT_TOPIC`, ensuring a
+feed document has an auditable placement even when the fixed extractor
+vocabulary finds no narrower concept. Free keywords never create semantic
+edges. `RELATED_TO` uses IDF-weighted concept overlap, suppresses concepts found
+in more than 10 percent of documents, requires score 0.20, and keeps at most 10
+neighbors per document.
+
+Hubs include degree, weighted degree, and deterministic PageRank. Clusters are
+connected components using `RELATED_TO` score at least 0.35. Trend analysis
+compares equal recent and baseline windows using per-source document shares, so
+a high-volume feed cannot dominate by volume alone. Emerging topics require at
+least three recent documents and positive smoothed log growth.
+
+Read graph outputs through:
+
+- `GET /api/graph`
+- `GET /api/placement?id=<paper-or-feed-item-id>`
+- `GET /api/hubs`
+- `GET /api/clusters`
+- `GET /api/trends`
+
+See [`docs/PROJECT_1_IMPLEMENTATION_PLAN.md`](docs/PROJECT_1_IMPLEMENTATION_PLAN.md)
+for frozen interfaces and verification gates. Current live counts, requirement
+coverage, checkpoint history, and interpretation limits are in the
+[`Project 1 system report`](docs/PROJECT_1_SYSTEM_REPORT.md).
 
 ## Tests
 

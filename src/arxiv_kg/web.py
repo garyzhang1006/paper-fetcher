@@ -110,6 +110,16 @@ class PaperFetcherHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/papers":
             self._list_papers(parse_qs(parsed.query))
             return
+        if parsed.path == "/api/graph":
+            self._get_graph(parse_qs(parsed.query))
+            return
+        if parsed.path == "/api/placement":
+            self._get_placement(parse_qs(parsed.query))
+            return
+        if parsed.path in {"/api/hubs", "/api/clusters", "/api/trends"}:
+            key = parsed.path.removeprefix("/api/")
+            self._get_analysis_section(key)
+            return
         self._send_json(HTTPStatus.NOT_FOUND, {"error": "Route not found"})
 
     def do_POST(self) -> None:
@@ -148,29 +158,130 @@ class PaperFetcherHandler(BaseHTTPRequestHandler):
         search = query.get("search", [""])[0].strip().casefold()
         category = query.get("category", [""])[0].strip()
         try:
-            limit = int(query.get("limit", ["100"])[0])
-        except ValueError:
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "limit must be an integer"})
+            limit = self._bounded_query_int(
+                query, "limit", default=100, maximum=500
+            )
+        except ValueError as exc:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
             return
-        limit = min(max(limit, 1), 500)
 
-        matching: list[dict[str, Any]] = []
-        for paper in self.server.database.iter_papers(limit=500):
-            if category and category not in paper.categories:
-                continue
-            haystack = " ".join(
-                [paper.title, paper.abstract, paper.arxiv_id, *paper.authors]
-            ).casefold()
-            if search and search not in haystack:
-                continue
-            matching.append(paper_to_dict(paper))
-            if len(matching) >= limit:
-                break
+        papers, total = self.server.database.search_papers(
+            search=search,
+            category=category,
+            limit=limit,
+        )
 
         self._send_json(
             HTTPStatus.OK,
-            {"papers": matching, "total": len(matching)},
+            {
+                "papers": [paper_to_dict(paper) for paper in papers],
+                "total": total,
+                "categories": self.server.database.list_paper_categories(),
+            },
         )
+
+    def _get_graph(self, query: dict[str, list[str]]) -> None:
+        try:
+            limit = self._bounded_query_int(query, "limit", default=100, maximum=500)
+            edge_limit = self._bounded_query_int(
+                query, "edge_limit", default=200, maximum=1000
+            )
+            offset = self._bounded_query_int(
+                query, "offset", default=0, maximum=1_000_000, minimum=0
+            )
+        except ValueError as exc:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+            return
+
+        node_type = query.get("node_type", [""])[0].strip() or None
+        search = query.get("search", [""])[0].strip() or None
+        relation = query.get("relation", [""])[0].strip() or None
+        node_id = query.get("node_id", [""])[0].strip() or None
+        nodes = self.server.database.list_graph_nodes(
+            node_type=node_type,
+            search=search,
+            limit=limit,
+            offset=offset,
+        )
+        edges = self.server.database.list_graph_edges(
+            node_id=node_id,
+            relation=relation,
+            limit=edge_limit,
+        )
+        analysis = self.server.database.get_graph_analysis()
+        self._send_json(
+            HTTPStatus.OK,
+            {
+                "status": "ready" if analysis else "not_built",
+                "build_id": analysis["build_id"] if analysis else None,
+                "nodes": nodes,
+                "edges": edges,
+            },
+        )
+
+    def _get_placement(self, query: dict[str, list[str]]) -> None:
+        identifier = query.get("id", [""])[0].strip()
+        if not identifier:
+            self._send_json(
+                HTTPStatus.BAD_REQUEST,
+                {"error": "id query parameter is required"},
+            )
+            return
+        node = self.server.database.get_graph_node(identifier)
+        if node is None:
+            self._send_json(
+                HTTPStatus.NOT_FOUND,
+                {"error": f"Graph document not found: {identifier}"},
+            )
+            return
+        edges = self.server.database.list_graph_edges(
+            node_id=node["node_id"], limit=200
+        )
+        neighbor_ids = {
+            edge["target_id"] if edge["source_id"] == node["node_id"] else edge["source_id"]
+            for edge in edges
+        }
+        neighbors = self.server.database.get_graph_nodes(neighbor_ids)
+        self._send_json(
+            HTTPStatus.OK,
+            {"document": node, "relationships": edges, "neighbors": neighbors},
+        )
+
+    def _get_analysis_section(self, key: str) -> None:
+        analysis = self.server.database.get_graph_analysis()
+        if analysis is None:
+            self._send_json(
+                HTTPStatus.OK,
+                {"status": "not_built", "build_id": None, key: []},
+            )
+            return
+        self._send_json(
+            HTTPStatus.OK,
+            {
+                "status": "ready",
+                "build_id": analysis["build_id"],
+                "built_at": analysis["built_at"],
+                key: analysis.get(key, []),
+            },
+        )
+
+    @staticmethod
+    def _bounded_query_int(
+        query: dict[str, list[str]],
+        key: str,
+        *,
+        default: int,
+        maximum: int,
+        minimum: int = 1,
+    ) -> int:
+        raw = query.get(key, [str(default)])[0]
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise ValueError(f"{key} must be an integer") from exc
+        if not minimum <= value <= maximum:
+            raise ValueError(f"{key} must be between {minimum} and {maximum}")
+        return value
 
     def _read_json_body(self) -> object:
         content_type = self.headers.get_content_type()

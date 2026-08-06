@@ -82,6 +82,7 @@ def test_ui_and_stats_endpoints(running_server):
     with urlopen(f"{base_url}/api/stats") as response:
         assert json.load(response) == {
             "papers": 0,
+            "source_items": 0,
             "features": 0,
             "nodes": 0,
             "edges": 0,
@@ -116,9 +117,48 @@ def test_paper_search_endpoint(running_server):
         payload = json.load(response)
     assert payload["total"] == 1
     assert payload["papers"][0]["title"] == "Graph Learning for Robot Control"
+    assert payload["categories"] == ["cs.LG", "cs.RO"]
 
     with urlopen(f"{base_url}/api/papers?search=biology") as response:
         assert json.load(response)["papers"] == []
+
+    with pytest.raises(HTTPError) as caught:
+        urlopen(f"{base_url}/api/papers?limit=0")
+    assert caught.value.code == 400
+
+
+def test_paper_search_covers_rows_beyond_first_five_hundred(running_server):
+    server, base_url = running_server
+    now = datetime(2026, 7, 9, tzinfo=UTC)
+    papers = []
+    for index in range(501):
+        identifier = f"2607.{index + 1:05d}"
+        papers.append(
+            PaperRecord(
+                arxiv_id=identifier,
+                versioned_id=f"{identifier}v1",
+                version=1,
+                title=(
+                    "Unique oldest searchable paper"
+                    if index == 0
+                    else f"Routine paper {index}"
+                ),
+                abstract="Saved abstract.",
+                authors=["Ada Student"],
+                categories=["cs.LG"],
+                primary_category="cs.LG",
+                published_at=now.replace(day=1) if index == 0 else now,
+                updated_at=now,
+                abs_url=f"https://arxiv.org/abs/{identifier}v1",
+            )
+        )
+    server.database.upsert_papers(papers)
+
+    with urlopen(f"{base_url}/api/papers?search=unique%20oldest") as response:
+        payload = json.load(response)
+
+    assert payload["total"] == 1
+    assert payload["papers"][0]["arxiv_id"] == "2607.00001"
 
 
 def test_fetch_endpoint_returns_actionable_validation_error(running_server):
@@ -133,3 +173,88 @@ def test_fetch_endpoint_returns_actionable_validation_error(running_server):
         urlopen(request)
     assert caught.value.code == 400
     assert "Choose at least one arXiv category" in caught.value.read().decode("utf-8")
+
+
+def test_graph_endpoints_report_empty_state_and_validate_limits(running_server):
+    _, base_url = running_server
+
+    with urlopen(f"{base_url}/api/graph") as response:
+        payload = json.load(response)
+    assert payload == {
+        "status": "not_built",
+        "build_id": None,
+        "nodes": [],
+        "edges": [],
+    }
+
+    with urlopen(f"{base_url}/api/trends") as response:
+        assert json.load(response) == {
+            "status": "not_built",
+            "build_id": None,
+            "trends": [],
+        }
+
+    with pytest.raises(HTTPError) as caught:
+        urlopen(f"{base_url}/api/graph?limit=0")
+    assert caught.value.code == 400
+    assert "limit must be between 1 and 500" in caught.value.read().decode("utf-8")
+
+
+def test_graph_and_placement_endpoints_return_active_snapshot(running_server):
+    server, base_url = running_server
+    nodes = [
+        {
+            "node_id": "paper:one",
+            "node_type": "paper",
+            "name": "Graph Learning",
+            "canonical_name": "graph learning",
+            "properties": {"document_id": "2607.00001", "summary": "A graph paper."},
+        },
+        {
+            "node_id": "topic:graphs",
+            "node_type": "topic",
+            "name": "Graph learning",
+            "canonical_name": "graph learning",
+            "properties": {},
+        },
+    ]
+    edges = [
+        {
+            "source_id": "paper:one",
+            "relation": "ABOUT_TOPIC",
+            "target_id": "topic:graphs",
+            "properties": {"evidence": "Graph learning is the domain."},
+        }
+    ]
+    server.database.replace_graph(
+        build_id="f" * 64,
+        document_count=1,
+        nodes=nodes,
+        edges=edges,
+        analysis={
+            "hubs": [{"node_id": "topic:graphs", "pagerank": 0.6}],
+            "clusters": [{"cluster_id": "cluster-1", "size": 1}],
+            "trends": [{"concept": "Graph learning", "status": "hot"}],
+        },
+    )
+
+    with urlopen(f"{base_url}/api/graph?node_type=paper") as response:
+        graph = json.load(response)
+    assert graph["status"] == "ready"
+    assert graph["build_id"] == "f" * 64
+    assert [node["node_id"] for node in graph["nodes"]] == ["paper:one"]
+
+    with urlopen(f"{base_url}/api/placement?id=2607.00001") as response:
+        placement = json.load(response)
+    assert placement["document"]["node_id"] == "paper:one"
+    assert placement["relationships"][0]["relation"] == "ABOUT_TOPIC"
+    assert placement["neighbors"][0]["node_id"] == "topic:graphs"
+
+    with urlopen(f"{base_url}/api/hubs") as response:
+        hubs = json.load(response)
+    assert hubs["build_id"] == "f" * 64
+    assert hubs["hubs"][0]["node_id"] == "topic:graphs"
+
+    with pytest.raises(HTTPError) as caught:
+        urlopen(f"{base_url}/api/placement?id=missing")
+    assert caught.value.code == 404

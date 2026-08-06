@@ -1,0 +1,67 @@
+{
+  "arxiv": null,
+  "bootstrap": null,
+  "collection_errors": [],
+  "completed_at": "2026-08-06T20:09:40.108919+00:00",
+  "database_counts": {
+    "edges": 59256,
+    "features": 7794,
+    "nodes": 8951,
+    "papers": 7794,
+    "source_items": 960
+  },
+  "features_extracted": 0,
+  "feeds": [
+    {
+      "inserted": 0,
+      "received": 100,
+      "source_id": "google-deepmind-blog",
+      "unchanged": 0,
+      "updated": 100
+    },
+    {
+      "inserted": 735,
+      "received": 835,
+      "source_id": "hugging-face-blog",
+      "unchanged": 0,
+      "updated": 100
+    },
+    {
+      "inserted": 0,
+      "received": 25,
+      "source_id": "reddit-machine-learning",
+      "unchanged": 0,
+      "updated": 25
+    }
+  ],
+  "graph": {
+    "build_id": "95ac2bfcd067acf6cf2b7ce03fd686920ebfb14a95b3364d0c38095bcbae00c2",
+    "documents": 8754,
+    "edges": 59256,
+    "nodes": 8951
+  },
+  "offline": false,
+  "started_at": "2026-08-06T20:09:28.292425+00:00",
+  "status": "ok",
+  "stored_sources": [
+    {
+      "item_count": 100,
+      "source_id": "google-deepmind-blog",
+      "source_kind": "research_blog",
+      "source_name": "Google DeepMind Blog"
+    },
+    {
+      "item_count": 835,
+      "source_id": "hugging-face-blog",
+      "source_kind": "research_report",
+      "source_name": "Hugging Face Blog"
+    },
+    {
+      "item_count": 25,
+      "source_id": "reddit-machine-learning",
+      "source_kind": "social_media",
+      "source_name": "Reddit r/MachineLearning"
+    }
+  ],
+  "trend_status": "ok"
+}

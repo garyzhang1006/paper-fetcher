@@ -1,0 +1,405 @@
+{
+  "build_id": "95ac2bfcd067acf6cf2b7ce03fd686920ebfb14a95b3364d0c38095bcbae00c2",
+  "hubs": [
+    {
+      "degree": 960,
+      "name": "machine learning",
+      "node_id": "topic:dcaa8e5ecb8d70ad",
+      "node_type": "topic",
+      "pagerank": 0.03323467442778544,
+      "weighted_degree": 960.0
+    },
+    {
+      "degree": 1267,
+      "name": "cs.LG",
+      "node_id": "category:7df7cf08ae165e45",
+      "node_type": "category",
+      "pagerank": 0.01111506880545049,
+      "weighted_degree": 1267.0
+    },
+    {
+      "degree": 1302,
+      "name": "cs.AI",
+      "node_id": "category:ae6c437b6eefabbc",
+      "node_type": "category",
+      "pagerank": 0.010745942547397948,
+      "weighted_degree": 1302.0
+    },
+    {
+      "degree": 937,
+      "name": "cs.CV",
+      "node_id": "category:83de0849a93d8811",
+      "node_type": "category",
+      "pagerank": 0.008140306516465138,
+      "weighted_degree": 937.0
+    },
+    {
+      "degree": 943,
+      "name": "accuracy",
+      "node_id": "metric:5879092f86c5e019",
+      "node_type": "metric",
+      "pagerank": 0.007600161404810687,
+      "weighted_degree": 943.0
+    },
+    {
+      "degree": 917,
+      "name": "generation",
+      "node_id": "research_goal:e661f4c935e8a5a8",
+      "node_type": "research_goal",
+      "pagerank": 0.007544639527992176,
+      "weighted_degree": 917.0
+    },
+    {
+      "degree": 765,
+      "name": "natural language processing",
+      "node_id": "topic:dc453b2d95200c3c",
+      "node_type": "topic",
+      "pagerank": 0.005884038100941766,
+      "weighted_degree": 765.0
+    },
+    {
+      "degree": 748,
+      "name": "large language model",
+      "node_id": "method:9c26adb26ee86916",
+      "node_type": "method",
+      "pagerank": 0.005699246464347022,
+      "weighted_degree": 748.0
+    },
+    {
+      "degree": 563,
+      "name": "quant-ph",
+      "node_id": "category:717486fc44f936a0",
+      "node_type": "category",
+      "pagerank": 0.004609018132759086,
+      "weighted_degree": 563.0
+    },
+    {
+      "degree": 603,
+      "name": "computer vision",
+      "node_id": "topic:c1c77e5bab22d16a",
+      "node_type": "topic",
+      "pagerank": 0.004583687998479241,
+      "weighted_degree": 603.0
+    },
+    {
+      "degree": 504,
+      "name": "cs.CL",
+      "node_id": "category:0d214590200423a2",
+      "node_type": "category",
+      "pagerank": 0.0037048135276679735,
+      "weighted_degree": 504.0
+    },
+    {
+      "degree": 444,
+      "name": "classification",
+      "node_id": "research_goal:9f0c8aa526579f4d",
+      "node_type": "research_goal",
+      "pagerank": 0.0035165440129146103,
+      "weighted_degree": 444.0
+    },
+    {
+      "degree": 402,
+      "name": "cs.RO",
+      "node_id": "category:ffef005f9383cf1e",
+      "node_type": "category",
+      "pagerank": 0.0029475276024110656,
+      "weighted_degree": 402.0
+    },
+    {
+      "degree": 335,
+      "name": "math.CO",
+      "node_id": "category:f2fdd42dceb1c94d",
+      "node_type": "category",
+      "pagerank": 0.0028137656389317393,
+      "weighted_degree": 335.0
+    },
+    {
+      "degree": 362,
+      "name": "robotics",
+      "node_id": "topic:7793ba1ad02f2d82",
+      "node_type": "topic",
+      "pagerank": 0.0027922759662004893,
+      "weighted_degree": 362.0
+    },
+    {
+      "degree": 338,
+      "name": "precision",
+      "node_id": "metric:68c2f9ee314749c0",
+      "node_type": "metric",
+      "pagerank": 0.002686836593229222,
+      "weighted_degree": 338.0
+    },
+    {
+      "degree": 298,
+      "name": "healthcare",
+      "node_id": "topic:3d8049711c0c7067",
+      "node_type": "topic",
+      "pagerank": 0.0023278904439761453,
+      "weighted_degree": 298.0
+    },
+    {
+      "degree": 282,
+      "name": "cs.CR",
+      "node_id": "category:8c4e0957410b77dd",
+      "node_type": "category",
+      "pagerank": 0.002215036350377283,
+      "weighted_degree": 282.0
+    },
+    {
+      "degree": 287,
+      "name": "reinforcement learning",
+      "node_id": "method:2a8bdad2e9697326",
+      "node_type": "method",
+      "pagerank": 0.002168331215051632,
+      "weighted_degree": 287.0
+    },
+    {
+      "degree": 253,
+      "name": "transformer",
+      "node_id": "method:361b904b27614818",
+      "node_type": "method",
+      "pagerank": 0.0019947665916571346,
+      "weighted_degree": 253.0
+    },
+    {
+      "degree": 260,
+      "name": "cs.SE",
+      "node_id": "category:4058dc4ab37110c5",
+      "node_type": "category",
+      "pagerank": 0.0019638629046425985,
+      "weighted_degree": 260.0
+    },
+    {
+      "degree": 244,
+      "name": "hep-th",
+      "node_id": "category:85c2533993acf809",
+      "node_type": "category",
+      "pagerank": 0.0019562557469210663,
+      "weighted_degree": 244.0
+    },
+    {
+      "degree": 232,
+      "name": "math.OC",
+      "node_id": "category:bcba45855da3ad87",
+      "node_type": "category",
+      "pagerank": 0.0019238164190829743,
+      "weighted_degree": 232.0
+    },
+    {
+      "degree": 233,
+      "name": "math.AP",
+      "node_id": "category:a6e486a3c2757ad2",
+      "node_type": "category",
+      "pagerank": 0.0019224551006292118,
+      "weighted_degree": 233.0
+    },
+    {
+      "degree": 237,
+      "name": "hep-ph",
+      "node_id": "category:47284d8b83096d33",
+      "node_type": "category",
+      "pagerank": 0.0018799622582633389,
+      "weighted_degree": 237.0
+    },
+    {
+      "degree": 223,
+      "name": "gr-qc",
+      "node_id": "category:52b641c04a22a344",
+      "node_type": "category",
+      "pagerank": 0.0017875439003021147,
+      "weighted_degree": 223.0
+    },
+    {
+      "degree": 203,
+      "name": "math.NA",
+      "node_id": "category:a31383a12e2e2922",
+      "node_type": "category",
+      "pagerank": 0.0016697875237032275,
+      "weighted_degree": 203.0
+    },
+    {
+      "degree": 202,
+      "name": "eess.SY",
+      "node_id": "category:9b4d1e3fd7105787",
+      "node_type": "category",
+      "pagerank": 0.0016354016975733598,
+      "weighted_degree": 202.0
+    },
+    {
+      "degree": 172,
+      "name": "math.PR",
+      "node_id": "category:a59c48b880987633",
+      "node_type": "category",
+      "pagerank": 0.0014950128493906507,
+      "weighted_degree": 172.0
+    },
+    {
+      "degree": 173,
+      "name": "math-ph",
+      "node_id": "category:d265d9cf8871c54b",
+      "node_type": "category",
+      "pagerank": 0.0014934596961921258,
+      "weighted_degree": 173.0
+    },
+    {
+      "degree": 179,
+      "name": "eess.SP",
+      "node_id": "category:fb7f378051862f6e",
+      "node_type": "category",
+      "pagerank": 0.0014666050157364212,
+      "weighted_degree": 179.0
+    },
+    {
+      "degree": 170,
+      "name": "regression",
+      "node_id": "research_goal:f274537aaf2c5097",
+      "node_type": "research_goal",
+      "pagerank": 0.0013766583641423077,
+      "weighted_degree": 170.0
+    },
+    {
+      "degree": 168,
+      "name": "stat.ML",
+      "node_id": "category:69f361c6e9820329",
+      "node_type": "category",
+      "pagerank": 0.001358857331648142,
+      "weighted_degree": 168.0
+    },
+    {
+      "degree": 159,
+      "name": "math.NT",
+      "node_id": "category:66657e63f20c78a5",
+      "node_type": "category",
+      "pagerank": 0.0013403935907561593,
+      "weighted_degree": 159.0
+    },
+    {
+      "degree": 151,
+      "name": "physics.optics",
+      "node_id": "category:3857334ba3299fc0",
+      "node_type": "category",
+      "pagerank": 0.0012777419143626034,
+      "weighted_degree": 151.0
+    },
+    {
+      "degree": 149,
+      "name": "stat.ME",
+      "node_id": "category:efb0afa8aec211cc",
+      "node_type": "category",
+      "pagerank": 0.0012278272766877872,
+      "weighted_degree": 149.0
+    },
+    {
+      "degree": 156,
+      "name": "segmentation",
+      "node_id": "research_goal:fba586be3b6f140b",
+      "node_type": "research_goal",
+      "pagerank": 0.0011711336681909242,
+      "weighted_degree": 156.0
+    },
+    {
+      "degree": 138,
+      "name": "cs.DS",
+      "node_id": "category:3569a067a8df2fdb",
+      "node_type": "category",
+      "pagerank": 0.0011709889052618847,
+      "weighted_degree": 138.0
+    },
+    {
+      "degree": 131,
+      "name": "math.AG",
+      "node_id": "category:697ace8f76a191a2",
+      "node_type": "category",
+      "pagerank": 0.0011547822930326065,
+      "weighted_degree": 131.0
+    },
+    {
+      "degree": 121,
+      "name": "math.DS",
+      "node_id": "category:947f9574f67b675e",
+      "node_type": "category",
+      "pagerank": 0.001133115465364534,
+      "weighted_degree": 121.0
+    },
+    {
+      "degree": 134,
+      "name": "cs.HC",
+      "node_id": "category:94dfecfe4713d972",
+      "node_type": "category",
+      "pagerank": 0.001070754680705256,
+      "weighted_degree": 134.0
+    },
+    {
+      "degree": 119,
+      "name": "cs.IT",
+      "node_id": "category:54cea5aea13ce954",
+      "node_type": "category",
+      "pagerank": 0.0010182393875371512,
+      "weighted_degree": 119.0
+    },
+    {
+      "degree": 125,
+      "name": "recall",
+      "node_id": "metric:2ed6b4c1ae9f8249",
+      "node_type": "metric",
+      "pagerank": 0.000978620642572882,
+      "weighted_degree": 125.0
+    },
+    {
+      "degree": 108,
+      "name": "math.FA",
+      "node_id": "category:92b92ed8495675af",
+      "node_type": "category",
+      "pagerank": 0.000949109096431735,
+      "weighted_degree": 108.0
+    },
+    {
+      "degree": 109,
+      "name": "cs.CY",
+      "node_id": "category:26cc39688553d69f",
+      "node_type": "category",
+      "pagerank": 0.0008869977503713431,
+      "weighted_degree": 109.0
+    },
+    {
+      "degree": 96,
+      "name": "math.DG",
+      "node_id": "category:3ec17b9af8d20c8f",
+      "node_type": "category",
+      "pagerank": 0.0008648986990367044,
+      "weighted_degree": 96.0
+    },
+    {
+      "degree": 109,
+      "name": "cs.IR",
+      "node_id": "category:42b580d0582ff818",
+      "node_type": "category",
+      "pagerank": 0.0008518217193236125,
+      "weighted_degree": 109.0
+    },
+    {
+      "degree": 97,
+      "name": "machine translation",
+      "node_id": "research_goal:e9a83351be4ac72e",
+      "node_type": "research_goal",
+      "pagerank": 0.0008505617688549182,
+      "weighted_degree": 97.0
+    },
+    {
+      "degree": 101,
+      "name": "hep-ex",
+      "node_id": "category:0ad86a5e24118f50",
+      "node_type": "category",
+      "pagerank": 0.0008393667225786138,
+      "weighted_degree": 101.0
+    },
+    {
+      "degree": 98,
+      "name": "cs.DC",
+      "node_id": "category:358e01d52b752bcb",
+      "node_type": "category",
+      "pagerank": 0.0008334089235812261,
+      "weighted_degree": 98.0
+    }
+  ]
+}
