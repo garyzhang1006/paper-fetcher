@@ -176,6 +176,19 @@ strict metrics, cross-list audit, two examined cases, and figure generation
 \cite{repository}.
 Learning curves come from the metrics artifact saved July 30.
 
+\subsection{Operational research-graph integration}
+
+The classifier now sits beside the repository's daily research knowledge-graph
+agent. Its verified August 6 snapshot contains 8,754 documents, 8,951 nodes,
+and 59,256 typed edges; every document has at least one edge. GitHub Actions
+schedules collection at 13:17 UTC, and the local interface exposes search,
+placement explanations, hubs, clusters, and topic trends \cite{repository}.
+Graph placement uses recorded arXiv categories, configured source metadata,
+and rule-extractor evidence. It does not use classifier predictions as ground
+truth or create edges from them. This operational integration expands how the
+stored papers can be explored, but it does not change or further validate the
+61.37\% held-out classification result reported below.
+
 \clearpage
 
 \section{Current results}
